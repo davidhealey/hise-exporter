@@ -1,0 +1,14 @@
+{
+  "name": "hise-exporter",
+  "version": "0.0.1",
+  "description": "A tool to aid building of HISE projects.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "David Healey",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "electron": "^10.1.3"
+  }
+}
