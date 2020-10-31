@@ -1,0 +1,48 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Install Linux packages
+      if: runner.os == 'Linux'
+      run: sudo env DEBIAN_FRONTEND=noninteractive apt-get -qq -y install pbzip2 zstd
+
+    - name: Install macOS packages
+      if: runner.os == 'macOS'
+      run: brew install pbzip2 coreutils zstd
+
+    - name: Checkout Makeself
+      uses: actions/checkout@v2
+
+    - name: Build release
+      run: |
+        git submodule update --init --recursive
+        make
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: Makeself-Build
+        path: release
+        
+    - name: Run tests
+      run: make test
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Makeself
+      uses: actions/checkout@v2
+    - name: Run ShellCheck
+      uses: azohra/shell-linter@feature/add-severity-mode
+      with:
+        path: "makeself.sh"
+        severity: "error"

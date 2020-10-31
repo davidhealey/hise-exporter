@@ -2,13 +2,60 @@
   "name": "hise-exporter",
   "version": "0.0.1",
   "description": "A tool to aid building of HISE projects.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "main": "src/main/main.js",
+  "author": {
+    "name": "David Healey",
+    "email": "app@app.com"
   },
-  "author": "David Healey",
   "license": "GPL-3.0-or-later",
+  "homepage": "none",
+  "scripts": {
+    "postinstall": "install-app-deps",
+    "start": "electron . --no-sandbox",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "HISE Exporter",
+    "extraResources": [{
+      "from": "assets",
+      "to": "assets"
+    }],
+    "dmg": {
+      "contents": [{
+          "x": 110,
+          "y": 150
+        },
+        {
+          "x": 240,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "target": "AppImage"
+    },
+    "win": {
+      "target": [
+        "squirrel",
+        "NSIS"
+      ],
+      "icon": "build/icon.ico"
+    }
+  },
   "devDependencies": {
-    "electron": "^10.1.3"
+    "electron": "^10.1.3",
+    "electron-builder": "^22.9.1"
+  },
+  "dependencies": {
+    "app-root-path": "^3.0.0",
+    "keytar": "^6.14.8",
+    "escape-path-with-spaces": "^1.0.0",
+    "node-addon-api": "^3.0.2",
+    "nodemon": "^2.0.4",
+    "uikit": "^3.5.8",
+    "xml2js": "^0.4.23"
   }
 }

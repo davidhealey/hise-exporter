@@ -1,0 +1,27 @@
+name: Release
+
+on: 
+  release:
+    types: [created, published, prereleased]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install Linux packages
+      run: sudo env DEBIAN_FRONTEND=noninteractive apt-get -qq -y install pbzip2
+
+    - name: Checkout Makeself
+      uses: actions/checkout@v2
+
+    - name: Build release
+      run: |
+        git submodule update --init --recursive
+        make
+
+    - name: Upload to release
+      uses: fnkr/github-action-ghr@v1
+      env:
+        GHR_PATH: release/
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
