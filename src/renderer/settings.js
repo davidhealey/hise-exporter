@@ -1,14 +1,15 @@
 const {ipcRenderer} = require('electron');
+const utils = require('./utils.js');
+const path = require('path');
 const fs = require('fs');
 const keytar = require('keytar')
 
 //Browse HISE standalone button
 document.querySelector('button#hise-exec-browse').addEventListener('click', e => {
 
-  ipcRenderer.invoke('openFile', {title: "HISE Executable", default:"/media/dave/Work 1/HISE Development Builds/HISE"}).then( response => {
+  let default_dir = localStorage.getItem("hise-exec") || "";
 
-    if (response.canceled) return false;
-
+  utils.openDir(default_dir, (response) => {
     let path = response.filePaths[0];
 
     if (path.indexOf("HISE") == -1) {
@@ -25,10 +26,9 @@ document.querySelector('button#hise-exec-browse').addEventListener('click', e =>
 //Browse HISE path button
 document.querySelector('button#hise-path-browse').addEventListener('click', e => {
 
-  ipcRenderer.invoke('openDir', {title: "HISE Source", default:"/media/dave/Work 1/HISE Development Builds/HISE"}).then( response => {
+  let default_dir = localStorage.getItem("hise-source") || "";
 
-    if (response.canceled) return false;
-
+  utils.openDir(default_dir, (response) => {
     let dir = response.filePaths[0];
     let xmlPath = dir + "/hi_core/hi_core.cpp"; //Path to hi_core.cpp to validate path is correct
 
@@ -68,9 +68,17 @@ document.querySelector("button#save-settings").addEventListener("click", e => {
   let apple_id = document.querySelector("input#apple-id").value;
   let apple_password = document.querySelector("input#apple-password").value;
 
-  //Save Apple credentials in keyring
-  if (process.platform != "darwin" && apple_password.length > 4)
-    keytar.setPassword("hise-exporter", "apple-developer", apple_password);
+  
+  if (process.platform == "darwin") {
+
+    //Add extra bit of path for HISE exec on OSX if .app was selected
+    if (path.extname(hise) == ".app")
+      hise = path.join(hise, "Contents", "MacOS", "HISE");
+  
+    //Save Apple developer credentials in keyring
+    if (apple_password.length > 4)
+      keytar.setPassword("hise-exporter", "apple-developer", apple_password);
+  }
 
   //Save non-secure settings in local storate
   let localStorage = window.localStorage;
@@ -78,4 +86,6 @@ document.querySelector("button#save-settings").addEventListener("click", e => {
   localStorage.setItem("hise-exec", hise);
   localStorage.setItem("hise-path", hise_path);
   localStorage.setItem("apple-id", apple_id);
+  
+  utils.notify("Settings Saved");
 });

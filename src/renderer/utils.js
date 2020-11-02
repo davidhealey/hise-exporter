@@ -1,16 +1,16 @@
 const { ipcRenderer } = require('electron');
+const UIkit = require('uikit');
 const path = require('path');
 const xml2js = require('xml2js');
 const fs = require('fs');
 
-exports.readXml = function(path) {
+exports.readXml = function(xml_path) {
   
   return new Promise(function(resolve, reject) {
-  
-    let xmlPath = path + "/project_info.xml";
-    
+      
     try {
-      let file = fs.readFile(xmlPath, (err, data) => {
+      let file = fs.readFile(xml_path, (err, data) => {
+        if (err) throw(err);
         let parser = new xml2js.Parser();
         parser.parseStringPromise(data).then(result => resolve(result));
       });
@@ -47,10 +47,16 @@ exports.openDir = function(default_dir, callback) {
 
 exports.moveFile = function(origin, destination) {
 
-  if (process.platform == "win32")
+  /*if (process.platform == "win32")
     return asyncExec("move", ["-f", '"' + origin + '"', '"' + destination + '"']);
   else
-    return asyncExec("mv", ["-f", '"' + origin + '"', '"' + destination + '"']);
+    return asyncExec("mv", ["-f", '"' + origin + '"', '"' + destination + '"']);*/
+  return new Promise(function(resolve, reject) {
+    fs.rename(origin, destination, (err) => {
+      if (err) throw err;
+      resolve();
+    }); 
+  });    
 }
 
 let spawnChild = function(cmd, args, opts) {
@@ -60,7 +66,7 @@ let spawnChild = function(cmd, args, opts) {
   return spawn(cmd, args, opts);
 }
 
-let asyncExec = function(cmd, args, opts) {
+const asyncExec = function(cmd, args, opts) {
   const ex = require('child_process').exec;
   cmd = cmd + " " + args.join(" "); //Append arguments to cmd
 
@@ -72,7 +78,7 @@ let asyncExec = function(cmd, args, opts) {
   }).catch((err) => {console.log('Caught! ' + err, cmd)});
 }
 
-let asyncExecFile = function(file, args, opts) {
+const asyncExecFile = function(file, args, opts) {
   const ex = require('child_process').execFile;
 
   return new Promise(function(resolve, reject) {
@@ -81,6 +87,15 @@ let asyncExecFile = function(file, args, opts) {
       resolve(stdout ? stdout : stderr);
     });
   }).catch((err) => {console.log('Caught! ' + err, file)});
+}
+
+exports.notify = function(message) {
+  UIkit.notification({
+    message: message,
+    status: 'primary',
+    pos: 'top-right',
+    timeout: 3000
+  });
 }
 
 exports.asyncExec = asyncExec;

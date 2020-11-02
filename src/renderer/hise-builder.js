@@ -1,6 +1,8 @@
 const utils = require('./utils.js');
 const path = require('path');
 const fs = require('fs');
+const os = require('os')
+
 let buildProcess; //Holds child_process object when running build
 
 const assetPath = process.env.NODE_ENV === 'development'
@@ -52,7 +54,7 @@ exports.buildInstallerGNU = function(project_path, project_name, project_version
       let file_name = archive_dir + "/" + project_name + "-" + project_version + ".run";
           
       //Copy license to packaging folder
-      fs.copyFileSync(path.join(project_path, "License.txt"), path.join(archive_dir, "License.txt"));     
+      fs.copyFileSync(path.join(project_path, "License.txt"), path.join(archive_dir, "License.txt"));
 
       //Copy startup script to packaging folder
       fs.copyFileSync(path.join(assetPath, "gnu-setup-script.sh"), path.join(archive_dir, "gnu-setup-script.sh"));
@@ -72,12 +74,15 @@ exports.buildOSX = function(project_path, config) {
   
   return new Promise(function(resolve, reject) {
     
+    let cwd = path.join(project_path, "Binaries", "Builds", "MacOSX");
+    let threads = os.cpus().length * 2 - 2;
+
     buildProcess = utils.spawnChild(
       "xcodebuild",
-      ["-project", "*.xcodeproj", "-configuration", config, " | xcpretty"],
-      {shell: true, cwd: project_path + "/Builds/MacOSX/"}
+      ["-project", "*.xcodeproj", "-configuration", config, "-jobs", threads],
+      {shell: true, "cwd": cwd}
     );
-    
+
     buildProcess.on('close', code => {code == 0 ? resolve() : reject(code)});
     
   }).catch((err) => {console.log('Caught! ' + err)});  
@@ -85,18 +90,32 @@ exports.buildOSX = function(project_path, config) {
 
 
 exports.buildInstallerOSX = function() {
-  /*if (($build_installer==1))
-  then
-    echo "Build Installer"
-    mkdir -p "$workspace"/Installer
-    $PACKAGES_BUILD "Packaging/OSX/$project.pkgproj"
-    cp "$workspace"/Packaging/OSX/build/"$project".pkg "$workspace"/Installer/"$project"\ "$version".pkg
 
-    echo "Cleanup"
-    rm -rf "$workspace"/Packaging/OSX/build
-  else
-    echo "Skip Building Installer"
-  fi*/  
+   /*return new Promise(async function(resolve, reject) {
+    
+    try {      
+      
+      let packages = "/usr/local/bin/packagesbuild";
+    
+      let license = path.join(project_path, "License.txt");
+      let archive_dir = project_path + "/Packaging/" + process.platform;
+      let file_name = archive_dir + "/" + project_name + "-" + project_version + ".run";
+          
+      //Copy license to packaging folder
+      fs.copyFileSync(path.join(project_path, "License.txt"), path.join(archive_dir, "License.txt"));
+
+      //Copy startup script to packaging folder
+      fs.copyFileSync(path.join(assetPath, "gnu-setup-script.sh"), path.join(archive_dir, "gnu-setup-script.sh"));
+      
+      //Run makeself
+      await utils.asyncExecFile(makeself, ["--license", license, '"' + archive_dir + '"', '"' + file_name + '"', '"' + project_name + '"', "./gnu-setup-script.sh"], {shell:true});
+      
+      resolve();
+    }
+    catch (err) {
+      reject(err);
+    }  
+  }).catch((err) => {console.log('Caught! ' + err)});*/
 }
 
 exports.buildWindows = function(type, format, arch) {
@@ -117,38 +136,83 @@ set Platform=X64
   
 }
 
-exports.assembleFileNameFromBuildArguments = function(project_path, project_name, args) {
-  //Turn arguments into string to append to file name
-  if (args.indexOf("-l") != -1) args[args.indexOf("-l")] = "-legacy"; //Expand -l to -legacy
-  args.splice(-1,1) //Remove last argument (project type)
-  args = args.map((x) => x.indexOf(":") != -1 ? "-" + x.substring(x.indexOf(":")+1) : x) //Remove unneeded chars
+//Assembles a new filename for the binary - without extension
+exports.getNewFilename = function(project_path, project_name, build_args, config) {
   
-  return project_name + args.join("");
+  //Turn arguments into string to append to file name
+  if (build_args.indexOf("-l") != -1) build_args[build_args.indexOf("-l")] = "-legacy"; //Expand -l to -legacy
+  
+  build_args.splice(0, 1) //Remove plugin type
+  build_args.splice(-1, 1) //Remove project type
+
+  //Remove unneeded chars
+  build_args = build_args.map((x) => x.indexOf(":") != -1 ? "-" + x.substring(x.indexOf(":")+1) : x)
+
+  if (config == "Release")
+    return project_name + build_args.join("");
+  else
+    return project_name + build_args.join("") + "-Debug";
 }
 
-exports.getBinaryExtensionFromBuildArguments = function(args) {
+//Determines the extension of the binary file based on the build arguments
+exports.getBinaryExtension = function(build_args) {
   
   let ext = "";
-  if (args.includes("-p:VST3")) ext = ".vst3";
-  if (args.includes("-p:AU")) ext = ".component";
-  if (args.includes("-p:AAX")) ext = ".aaxplugin";
+  if (build_args.includes("-p:VST3")) ext = ".vst3";
+  if (build_args.includes("-p:AU")) ext = ".component";
+  if (build_args.includes("-p:AAX")) ext = ".aaxplugin";
   
   switch (process.platform) {
     case "linux":
-      if (args.includes("-p:VST")) ext = ".so";
+      if (build_args.includes("-p:VST")) ext = ".so";
     break;
     
     case "darwin":
-      if (args.includes("-p:VST")) ext = ".vst";
+      if (build_args.includes("-p:VST")) ext = ".vst";
+      if (build_args.includes("-t:standalone")) ext = ".app";
     break;
     
     case "win32":
-      if (args.includes("-p:VST")) ext = ".dll";
-      if (args.includes("-t:standalone")) ext = ".exe";
+      if (build_args.includes("-p:VST")) ext = ".dll";
+      if (build_args.includes("-t:standalone")) ext = ".exe";
     break;
   }
   
   return ext;
+}
+
+//Get location of binary file
+exports.getOutputDirectory = function(config) {
+
+  let result = path.join("Binaries", "Builds")
+
+  switch (process.platform) {
+    case "linux":
+      return path.join(result, "LinuxMakefile", "build");
+    break;
+    
+    case "darwin":
+      return path.join(result, "MacOSX", "build", config);
+    break;
+    
+    case "win32":
+      return path.join(result, "VisualStudio2017");
+    break;
+  }
+}
+
+//Get name of generated binary file - without extension
+exports.getOutputName = function(project_name, config) {
+  
+  switch (process.platform) {    
+    case "darwin":
+      return project_name + " " + config;
+    break;
+    
+    case "win32":
+      return project_name + "_" + config;
+    break;
+  }
 }
 
 /*
@@ -171,15 +235,30 @@ exports.cleanBuildDirectory = function(hise, project_path) {
 }
 
 exports.runHISEExport = function(hise, project_path, project_file, extraArgs) {
-  let path = '"' + project_path + "/XmlPresetBackups/" + project_file + '"';
+  //let path = '"' + project_path + "/XmlPresetBackups/" + project_file + '"'; --Works on GNU
+  let project = path.join(project_path, "XmlPresetBackups", project_file);
   extraArgs = extraArgs.join(" ");
-  return utils.asyncExec('"' + hise + '"', ["export_ci", path, extraArgs]);
+  return utils.asyncExec('"' + hise + '"', ["export_ci", project, extraArgs]);
 }
 
 //Resaves the AutogeneratedProject.jucer file
 exports.resaveJucerFile = function(hise_source, project_path) {
-  let projucer = '"' + hise_source + "/tools/projucer/Projucer" + '"';
-  return utils.asyncExec(projucer, ["--resave AutogeneratedProject.jucer"], {"shell": true, "cwd": project_path + "/Binaries"});
+  //let projucer = '"' + hise_source + "/tools/projucer/Projucer" + '"';// --Works on GNU
+  let projucer = path.join(hise_source, "tools", "projucer", "Projucer"); 
+  let cwd = path.join(project_path, "Binaries");
+  
+  //Append extension on Windows
+  if (process.platform == "win32")
+    projucer += ".exe";
+  
+  //Append additional file path on MacOS
+  if (process.platform == "darwin")
+    projucer = path.join(projucer + ".app", "Contents", "MacOS", "Projucer");
+    
+  //Add executable permissions to Projucer binary (might not work on Windows)
+  fs.chmodSync(projucer, 0o775);
+   
+  return utils.asyncExec(projucer, ["--resave AutogeneratedProject.jucer"], {"shell": true, "cwd": cwd});
 }
 
 //Creates directory to store compiled binaries

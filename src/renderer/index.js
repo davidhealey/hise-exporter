@@ -2,7 +2,6 @@ const utils = require('./utils.js');
 const builder = require("./hise-builder.js"); //Compile/build
 const fs = require('fs');
 const path = require('path');
-const UIkit = require('uikit');
 
 let project_xml = {};
 let job_list = [];
@@ -22,10 +21,10 @@ document.querySelector('button#project-path-browse').addEventListener('click', e
     
     //Verify selected dir is a HISE project
     let dir = response.filePaths[0];
-    let xmlPath = dir + "/project_info.xml"; //path to project xml
+    let xmlPath = path.join(dir, "project_info.xml"); //Path to project xml
 
     if (!fs.existsSync(xmlPath)) {
-      notify("Not a HISE project folder");
+      utils.notify("Not a HISE project folder");
       return false;
     }
     
@@ -40,7 +39,7 @@ document.querySelector('button#project-path-browse').addEventListener('click', e
     document.getElementById("hidden-until-project").style.visibility = "visible";
 
     //Parse project xml
-    utils.readXml(dir).then((r) => r)
+    utils.readXml(xmlPath).then((r) => r)
     .then((result) => {
       project_xml = result;
       document.querySelector("input#project-name").value = project_xml.ProjectSettings.Name[0].$.value;
@@ -62,34 +61,35 @@ document.querySelector('button#project-path-browse').addEventListener('click', e
 //Populate project file select drop down
 function addProjectFilesToSelect(project_folder) {
 
+  document.getElementById("hidden-until-xml").style.visibility = "hidden";
+
+  //Add projects to dropdown
   let select = document.querySelector("select#project-file");
   select.innerHTML = "";
 
-  document.getElementById("hidden-until-xml").style.visibility = "hidden";
-
-  // list all files in the directory
+  //.xml projects
   fs.readdir(project_folder + "/XmlPresetBackups", (err, files) => {
-    if (err) {
-      notify("Project does not contain XMLPresetBackups Folder");
-      return false;
-    }
+    if (err) throw(err);
+    files.forEach(file => {if (file.includes(".xml")) {addOption(file);}});
+  });
 
-    // files object contains all files names
-    // log them on console
-    files.forEach(file => {
-      if (file.indexOf(".xml") > 0) { //Filter XML files
-        let option = document.createElement("option");
-        option.value = file;
-        option.innerText = file;
-        select.appendChild(option);
-      }
-    });
-
+  //.hip projects
+  fs.readdir(project_folder + "/Presets", (err, files) => {
+    if (err) throw(err);
+    files.forEach(file => {if (file.includes(".hip")) {addOption(file)}});
+    
     if (!select.length)
-      notify("There are no XML backups in the selected project.");
+      utils.notify("There are no XML backups or .hip files in the selected project.");
     else
       document.getElementById("hidden-until-xml").style.visibility = "visible";
   });
+  
+  function addOption(file) {
+    let option = document.createElement("option");
+    option.value = file;
+    option.innerText = file;
+    select.appendChild(option);  
+  }  
 }
 
 //Job type select
@@ -126,7 +126,7 @@ document.querySelector("button#add-to-queue").addEventListener("click", e => {
     if (!jobExists(data))
       addJob(data);
     else
-      notify("Same job is already in queue");
+      utils.notify("Same job is already in queue");
   }   
 });
 
@@ -160,27 +160,27 @@ function parseForms() {
   
   //Simple validation
   if (result["project-type"] != "installer" && result["hise-path"] == ""){
-    notify("HISE path not selected");
+    utils.notify("HISE path not selected");
     return false;
   }
 
   if (result["project-path"] == ""){
-    notify("No project selected");
+    utils.notify("No project selected");
     return false;
   }
 
   if (result["project-type"] != "installer" && result["project-file"] == ""){
-    notify("No project XML file selected");
+    utils.notify("No project XML file selected");
     return false;
   }
   
   if ((result["project-type"] == "instrument" || result["project-type"] == "effect") && !result["plugin-format"]) {
-    notify("Plugin format was not specified.");
+    utils.notify("Plugin format was not specified.");
     return false;
   }
 
   if (result["project-type"] != "installer" &&  !result["arch"]) {
-    notify("Architecture was not specified.");
+    utils.notify("Architecture was not specified.");
     return false;
   }
 
@@ -273,8 +273,8 @@ function addJob(data) {
   tr.appendChild(td);
   tbody.appendChild(tr);
 
-  //Notify user
-  notify("Added Job For " + entry[0]);
+  //utils.notify user
+  utils.notify("Added Job For " + entry[0]);
 };
 
 function removeFromQueue(e) {
@@ -297,7 +297,7 @@ document.querySelector('button#export').addEventListener('click', e => {
   
   //Simple validation
   if (job_list.length == 0) {
-    notify("No jobs in queue");
+    utils.notify("No jobs in queue");
     return false;
   }
   
@@ -471,15 +471,6 @@ function getBuildArguments(data) {
   if (data["project-type"]) args.push("-t:" + data["project-type"]);
 
   return args;  
-}
-
-function notify(message) {
-  UIkit.notification({
-    message: message,
-    status: 'primary',
-    pos: 'top-right',
-    timeout: 3000
-  });
 }
 
 function setExportStatus(current, total, message) {
