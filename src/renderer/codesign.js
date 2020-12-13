@@ -30,11 +30,11 @@ exports.killChild = function() {
   catch (err) {
     console.log("Process is not active: ", err);
   }
-}
+};
 
 exports.getChildProcess = function() {
   return child;
-}
+};
 
 function asyncExec(cmd, args, opts) {
   const ex = require('child_process').exec;
@@ -45,7 +45,7 @@ function asyncExec(cmd, args, opts) {
       if (error) reject(error);
       resolve(stdout ? stdout : stderr);
     });
-  }).catch((err) => {console.log('AsyncExec ' + err, cmd)});
+  }).catch((err) => {console.log('AsyncExec ' + err, cmd);});
 }
 
 function spawnChild(cmd, args, opts) {
@@ -72,22 +72,22 @@ exports.validateTeamId = function(team_id) {
     if (!app_id) resolve("app");
     if (!installer_id) resolve("installer");
     resolve(true);
-  }).catch((err) => {console.log(err)});
-}
+  }).catch((err) => {console.log(err);});
+};
 
 exports.signBinary = function(team_id, file) {
   console.log("Signing Binary");
   return asyncExec("codesign", ["--deep", "--force", "--options", "runtime", "--sign", '"Developer ID Application: ' + team_id + '"', '"' + file + '"', "--timestamp"]);
-}
+};
 
 exports.signInstaller = function(team_id, in_file, out_file) {
   console.log("Signing Installer");
   return asyncExec("productsign", ["--sign", '"Developer ID Installer: ' + team_id + '"', '"' + in_file + '"', '"' + out_file + '"', "--timestamp"]);
-}
+};
 
 exports.verifySignature = function(file) {
   return asyncExec("codesign", ["--verify", "--verbose", '"' + file + '"']);
-}
+};
 
 exports.notarizeInstaller = function(pkg, bundle_id, apple_id, app_specific_password) {
 
@@ -104,8 +104,8 @@ exports.notarizeInstaller = function(pkg, bundle_id, apple_id, app_specific_pass
     }
     let err = "Problem with notarization: " + result;
     reject(err);
-  }).catch((err) => {console.log(err)});
-}
+  }).catch((err) => {console.log(err);});
+};
 
 function getNotarizationStatus(uuid, apple_id, app_specific_password) {
   return new Promise(async function(resolve, reject) {
@@ -117,7 +117,7 @@ function getNotarizationStatus(uuid, apple_id, app_specific_password) {
     }
     else
       resolve("No Result");
-  }).catch((err) => {console.log(err)});
+  }).catch((err) => {console.log(err);});
 }
 exports.getNotarizationStatus = getNotarizationStatus; //Export for testing
 
@@ -142,9 +142,9 @@ exports.stapleInstaller = function(pkg, uuid, apple_id, app_specific_password) {
       }
     }, 30 * 1000);
 
-  }).catch((err) => {console.log(err)});
-}
+  }).catch((err) => {console.log(err);});
+};
 
 exports.validateStaple = function(pkg) {
   return asyncExec("xcrun stapler validate", ['"' + pkg + '"']);
-}
+};

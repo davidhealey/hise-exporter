@@ -1,4 +1,9 @@
 {
   "esversion": 8,
-  "indent": 1
+  "indent": 1,
+  "multistr": true,
+  "-W030": false,
+  "-W061": false,
+  "-W069": false,
+  "-W083": false
 }

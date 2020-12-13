@@ -61,7 +61,7 @@ const data = {
   "company_name": "Libre Wave",
 	"job":{"project-type":"instrument", "plugin-format":"VST2", "arch":"x86"}
 	//"job":{"project-type":"standalone", "arch":"x64"}
-}
+};
 
 async function build() {
 	
@@ -149,7 +149,7 @@ function notarize() {
     console.log(uuid.replace("RequestUUID = ", ""));
     
     resolve(uuid.replace("RequestUUID = ", ""));
-  }).catch((err) => {console.log('Caught! ' + err)});
+  }).catch((err) => {console.log('Caught! ' + err);});
 }
 
 async function getNotarizationStatus() {
@@ -198,9 +198,9 @@ async function getAppSpecificPassword() {
 }
 
 function timerTest() {
-  let count = 0
+  let count = 0;
   let timer = setInterval(function() {
-    console.log(count)
+    console.log(count);
     if (count > 9) {
       clearInterval(timer);
       console.log("Timer Complete");
@@ -221,8 +221,8 @@ async function validateTeamId() {
   console.log(result);
 }
 
-function editInnoTemplate() {
-	packager.editInnoTemplate(data.project_path[process.platform], data.project_name, data.project_version, data.company_name);
+function configureInnoTemplate() {
+	packager.configureInnoTemplate(data.project_path[process.platform], data.project_name, data.project_version, data.company_name);
 }
 
 function copyRlottieLibraries() {
@@ -263,7 +263,7 @@ function watchLogFile() {
 //updateProjectInfoXml();
 //timerTest();
 //build();
-//editInnoTemplate();
+//configureInnoTemplate();
 //copyRlottieLibraries();
 //createPackagingDirectory();
 //getOutputDirectory();

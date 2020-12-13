@@ -21,7 +21,7 @@ const utils = require('./utils.js');
 const codesign = require('./codesign.js');
 const log = require('electron-log');
 const path = require('path');
-const fs = require('fs-extra')
+const fs = require('fs-extra');
 const keytar = require('keytar');
 
 console.log = log.log;
@@ -133,7 +133,7 @@ document.querySelector("button#save-settings").addEventListener("click", async f
   //Save non-secure settings in local storage
   let localStorage = window.localStorage;
 
-  for (k in data) {
+  for (let k in data) {
     localStorage.setItem(k, data[k]);
   }
   
@@ -148,13 +148,13 @@ exports.getAppleCredentials = async function() {
 	result["apple-team-id"] = localStorage.getItem("apple-team-id");
 	result["app-specific-password"] = await keytar.getPassword("hise-exporter", "app-specific-password");	
 	return result;
-}
+};
 
 exports.getLocalSetting = function(key) {
   let localStorage = window.localStorage;
   return localStorage.getItem(key);
-}
+};
 
 exports.getAppSpecificPassword = function() {
   return keytar.getPassword("hise-exporter", "app-specific-password");
-}
+};

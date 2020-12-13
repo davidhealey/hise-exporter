@@ -342,7 +342,7 @@ function configureInnoTemplate(project_path, project_name, project_version, comp
 		});
 	}).catch((err) => {console.log(err);});
 }
-exports.editInnoTemplate = editInnoTemplate;
+exports.configureInnoTemplate = configureInnoTemplate;
 
 function runInnoSetup(project_path, normal, legacy) {
 	return new Promise(async function(resolve, reject) {

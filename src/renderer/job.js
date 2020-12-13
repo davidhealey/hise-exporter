@@ -179,7 +179,7 @@ function parseForms() {
     }
 
     resolve(result);
-  }).catch((err) => {console.log(err)});
+  }).catch((err) => {console.log(err);});
 }
 
 function verifyFormData(data) {
@@ -246,7 +246,7 @@ function verifyFormData(data) {
 		}
 
 		resolve(true);
-	}).catch((err) => {console.log(err)});
+	}).catch((err) => {console.log(err);});
 }
 
 function setPluginCategories(format) {
@@ -281,7 +281,7 @@ function setPluginCategories(format) {
 	
 	let defaults = ["Instrument", "Synth", "SWGenerators"];
 	
-	for (c of categories) {
+	for (let c of categories) {
 		
 		let li = document.createElement("li");
 		

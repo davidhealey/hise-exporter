@@ -18,7 +18,7 @@ along with Waistline.  If not, see <http://www.gnu.org/licenses/>.
 
 const utils = require('./utils.js');
 const log = require('electron-log');
-const fs = require('fs-extra')
+const fs = require('fs-extra');
 const path = require('path');
 
 console.log = log.log;
@@ -33,7 +33,7 @@ const getProjectInfo = function(key) {
 	    if (element.name == key)
 	      return element.attributes.value;
 	  }
-}
+};
 exports.getProjectInfo = getProjectInfo;
 
 //Open directory browser and populate sibling text input with selected dir
@@ -133,7 +133,7 @@ async function addProjectFilesToSelect(project_folder) {
   
     for (let file of files) {
       if (path.extname(file) == ".xml")
-        addOption(file)
+        addOption(file);
     }  
   }
 
@@ -144,7 +144,7 @@ async function addProjectFilesToSelect(project_folder) {
   
     for (let file of files) {
       if (path.extname(file) == ".hip")
-        addOption(file)
+        addOption(file);
     }  
   }
 

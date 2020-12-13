@@ -38,14 +38,14 @@ function createWindow (width, height, title, html, devTools, parent, show) {
     webPreferences: {
       nodeIntegration: true,
     }
-  })
+  });
 
   // and load the index.html of the app.
-  win.loadFile(html)
+  win.loadFile(html);
 
   // Open the DevTools.
   if (devTools)
-    win.webContents.openDevTools()
+    win.webContents.openDevTools();
 
   win.on("closed", () => {
     win = null;
@@ -79,9 +79,9 @@ app.on('ready', function(){
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
-})
+});
 
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
@@ -89,7 +89,7 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     mainWindow = createWindow(1000, 600, "Main", "src/renderer/index.html", true, null, true, false);
   }
-})
+});
 
 //Open directory dialog
 ipcMain.handle('openDir', (e, args) => {
