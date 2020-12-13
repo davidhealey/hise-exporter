@@ -75,13 +75,8 @@ exports.packageLinux = function(project_path, project_name, project_version, com
     //Copy resources to packaging folder
     copyResources(project_path, license_path, manual_path, "", script_path);
 
-    //Copy user manual to packaging folder
-		if (manual_path && path.extname(manual_path) == ".pdf")
-			fs.copyFileSync(manual_path, path.join(packagingDir, project_name + " User Manual.pdf"));
-
     //If no script provided then use default template
-    if (!script)
-      await editGnuInstallerScriptTemplate(project_path, project_name, company_name);
+    if (!script) await configureGnuInstallerScriptTemplate(project_path, project_name, company_name);
 
     //Run makeself
     console.log("Running makeself");
@@ -106,29 +101,7 @@ exports.packageLinux = function(project_path, project_name, project_version, com
   }).catch((err) => {console.log(err);});
 };
 
-function removeOldGNUScripts(project_path, project_name) {
-
-  console.log("Removing old installer");
-  
-  return new Promise(function(resolve, reject) {
-    let packagingDir = getPackagingDirectory(project_path);  
-    //Go through all the files in the packaging directory and remove any .sh ones
-    fs.readdir(packagingDir, (err, files) => {
-      if (err) throw (err);
-
-      files.every(file => {
-        if (path.extname(file) == ".sh" || path.extname(file) == ".run") {
-          console.log(file);
-          fs.removeSync(path.join(packagingDir, file));
-        }
-        return true;
-      });
-      resolve();
-    });
-  }).catch((err) => {console.log(err);});
-}
-
-function editGnuInstallerScriptTemplate(project_path, project_name, company_name) {
+function configureGnuInstallerScriptTemplate(project_path, project_name, company_name) {
 
   console.log("Setting up GNU installer template");
   
@@ -191,33 +164,6 @@ exports.packageDarwin = function(project_path, project_name, project_version, co
   }).catch((err) => {console.log(err);});
 };
 
-exports.packageWin32 = function(project_path, project_name, project_version, company_name, license_path, manual_path) {
-	
-  console.log("Packaging");
-  
-  return new Promise(async function(resolve, reject) {
-		
-		let packagingDir = getPackagingDirectory(project_path);
-		
-    //Copy resources to packaging folder
-    copyResources(project_path, license_path, manual_path);
-    			
-		//Configure InnoSetup template
-		let result = await editInnoTemplate(project_path, project_name, project_version, company_name);
-		
-		//Run InnoSetup
-		await runInnoSetup(project_path, result.normal, result.legacy);
-		
-		//Cleanup
-		fs.removeSync(path.join(packagingDir, "License.txt"));
-		if (manual_path) fs.removeSync(path.join(packagingDir, path.basename(manual_path)));
-		fs.removeSync(path.join(packagingDir, "rlottie_x86.dll"));
-		fs.removeSync(path.join(packagingDir, "rlottie_x64.dll"));		
-	
-		resolve();
-	}).catch((err) => {console.log(err);});
-};
-
 function configurePackagesTemplate(project_path, project_name, project_version, company_name) {
 
   console.log("Configuring Package Template.");
@@ -251,7 +197,7 @@ function configurePackagesTemplate(project_path, project_name, project_version, 
           break;
           case ".txt":
             if (file == "Read Me.txt")
-              token = "%README%"
+              token = "%README%";
           break;
         }
         
@@ -274,236 +220,32 @@ function configurePackagesTemplate(project_path, project_name, project_version, 
   }).catch((err) => {console.log(err);});
 }
 
-function makeMacComponents(project_path, project_name, project_version, company_name) {
-  
-  console.log("Building component packages");
-  
-  return new Promise(async function(resolve, reject) {
-  
-    let packagingDir = getPackagingDirectory(project_path);
-  
-    //Get all file names in packaging directory
-    let files = await fs.readdir(packagingDir);
-
-    //Process each file in sequence
-    let extensions = [".app", ".component", ".vst", ".vst3", ".aaxplugin"];
-    for (const file of files) {
-
-      if (extensions.includes(path.extname(file))) {
-            
-        let pkgId = getPkgIdentifier(company_name, project_name, file); //Bundle id
-        let installLocation = getMacInstallLocation(company_name, file);
-
-        console.log("Packaging:", file);
-
-        await utils.asyncExec(
-          "pkgbuild",
-          [
-            "--install-location",
-            '"' + installLocation + '"',
-            "--version",
-            project_version,
-            "--identifier",
-            pkgId,
-            "--component",
-            '"' + packagingDir + '/' + file + '"',
-            '"' + packagingDir + '/' + file + '.pkg"'
-          ],
-          {shell:true}
-        );
-      }
-    }
-    resolve();
-  }).catch((err) => {console.log(err);});
-}
-
-function makeMacDistributionPlist(dir) {
-
-  console.log("Making distribution plist");
+exports.packageWin32 = function(project_path, project_name, project_version, company_name, license_path, manual_path) {
+	
+  console.log("Packaging");
   
   return new Promise(async function(resolve, reject) {
-    
-    let args = ["--synthesize"];
-        
-    //Get all file names in packaging directory
-    let files = await fs.readdir(dir);
-
-    //Add all component packages as build arguments
-    for (const file of files) {
-      if (path.extname(file) == ".pkg") {
-        console.log("Adding package to plist:", file);
-        args.push("--package");
-        args.push('"' + file + '"');
-      }
-    }
-        
-    //Add output path to arguments
-    let outputPath = path.join(dir, "distribution.plist");
-    args.push('"' + outputPath + '"');
-      
-    //Run productbuild to build distribution plist.
-    await utils.asyncExec("productbuild", args, {shell:true, cwd:dir});
-  
-    resolve(outputPath);
-  }).catch((err) => {console.log(err);});
-}
-
-function editMacDistributionPlist(plist_path, license_path, readme_path) {
-
-  console.log("Configuring distribution plist")
-
-  return new Promise(async function(resolve, reject) {
-          
-    //Read in plist xml and convert to object
-    let xml = fs.readFileSync(plist_path, "utf8");    
-    let xmlObj = xmlHandler.xml2js(xml);
-
-    //Add license
-    if (fs.existsSync(license_path)) {
-      let license = {type:"element", name:"license", attributes:{file:license_path}};
-      xmlObj.elements[0].elements.push(license);
-    }
-
-    //Add readme
-    if (fs.existsSync(readme_path)) {
-      let readme = {type:"element", name:"readme", attributes:{file:readme_path}};
-      xmlObj.elements[0].elements.push(readme);    
-    }
-
-    //Edit elements
-    for (let element of xmlObj.elements[0].elements) {
-      
-      if (element.name == "options") {
-       element.attributes.customize = "always";
-      }
-
-      //Set title property for choices and make visible
-      if (element.name == "choice") {
-        if (element.attributes.id == "default") {
-          element.attributes.title = "All";
-          element.attributes.description = "This will install everything.";
-        }
-        else {
-          let title = getMacPackageTitle(element.attributes.id);
-          let description = getMacPackageDescription(element.attributes.id);
-          console.log("Adding title and description:", title, ":", description);
-          element.attributes.title = title;
-          element.attributes.description = description;
-          element.attributes.visible = "true";
-        }
-      }
-    }
-
-    //Convert object back to xml and write
-    xml = xmlHandler.js2xml(xmlObj, {spaces:4});
-
-    fs.writeFile(plist_path, xml,  () => resolve());
-
-  }).catch((err) => {console.log(err);});
-}
-
-function buildMacPackage(plist_path, output_path, packaging_dir, resources_dir, scripts_dir) {
-
-  console.log("Building distribution package");
-  
-  return new Promise(async function(resolve, reject) {
-            
-    let args = [
-      "--distribution",
-      '"' + plist_path + '"',
-      "--resources",
-      '"' + resources_dir + '"',
-      "--scripts",
-      '"' + scripts_dir + '"'
-      ];
-
-    //Set output path    
-    args.push('"' + output_path + '"');
-
-    //Run productbuild to build distribution plist.
-    await utils.asyncExec("productbuild", args, {shell:true, cwd:packaging_dir});
- 
-    resolve(output_path);
-  });
-}
-
-function getMacPackageTitle(id) {
-  let title = path.extname(id).replace(".", "");
-  title = title.replace(/([A-Z])/g, ' $1').trim(); //Add spaces to between uppercase
-  title = title.replace("V S T", "VST");
-  title.replace("V S T 3", "VST3");
-  title.replace("A U", "AU");
-  title.replace("A A X", "AAX");
-  
-  return title;
-}
-
-function getMacPackageDescription(id) {
-
-  let description = "This will install the ";
-  
-  if (id.includes("Standalone"))
-    description += "Standalone app.";
-    
-  if (id.includes("VST") && !id.includes("VST3"))
-    description += "VST2 plugin.";
-
-  if (id.includes("VST3"))
-    description += "VST3 plugin.";
-  
-  if (id.includes("AU"))
-    description += "AU plugin.";
-    
-  if (id.includes("AAX"))
-    description += "AAX plugin, for use in Pro-Tools.";
-
-  if (id.includes("Documentation"))
-    description += "User manual.";
-    
-  return description;
-}
-
-//Generates Apple bundle ID for given file_name
-function getPkgIdentifier(company_name, project_name, file_name) {
-
-  let id = "com." + company_name.toLowerCase() + ".pkg." + project_name;
-
-  switch(path.extname(file_name)) {
-    case ".pdf": id = id + "Documentation"; break;
-    case ".app": id = id + "Standalone"; break;
-    case ".vst": id = id + "VST"; break;
-    case ".vst3": id = id + "VST3"; break;
-    case ".component": id = id + "AU"; break;
-    case ".axxplugin": id = id + "AAX"; break;
-  }
-
-  if (file_name.includes("(L)")) id = id + "Legacy";
-  if (file_name.includes("IPP")) id = id + "Ipp";
-  if (file_name.includes("Debug")) id = id + "Debug";
-  
-  id = id.replaceAll(" ", "");
-  
-  console.log("Getting package ID for", file_name, id);
-
-  return id;
-}
-
-//Determines install location for mac binary
-function getMacInstallLocation(company_name, file_name) {
-  
-  let result = "/Library/Audio/Plug-Ins";
-  
-  switch(path.extname(file_name)) {
-    case ".pdf": result = path.join("Applications", company_name, "Documentation"); break;
-    case ".app": result = path.join("Applications", company_name); break;
-    case ".vst": result = result + "/VST"; break;
-    case ".vst3": result = result + "/VST3"; break;
-    case ".component": result = result + "/Components"; break;
-    case ".aaxplugin": result = "/Library/Application Support/Avid/Plug-Ins"; break;    
-  }
-  console.log("Getting installation location for", file_name, result);
-  return result;
-}
+		
+		let packagingDir = getPackagingDirectory(project_path);
+		
+    //Copy resources to packaging folder
+    copyResources(project_path, license_path, manual_path);
+    			
+		//Configure InnoSetup template
+		let result = await configureInnoTemplate(project_path, project_name, project_version, company_name);
+		
+		//Run InnoSetup
+		await runInnoSetup(project_path, result.normal, result.legacy);
+		
+		//Cleanup
+		fs.removeSync(path.join(packagingDir, "License.txt"));
+		fs.removeSync(path.join(packagingDir, "rlottie_x86.dll"));
+		fs.removeSync(path.join(packagingDir, "rlottie_x64.dll"));
+    if (manual_path) fs.removeSync(path.join(packagingDir, path.basename(manual_path)));
+	
+		resolve();
+	}).catch((err) => {console.log(err);});
+};
 
 function copyInnoSetupTemplate(project_path) {
 	return new Promise(async function(resolve, reject) {
@@ -527,7 +269,7 @@ function copyRlottieLibraries(project_path) {
 }
 exports.copyRlottieLibraries = copyRlottieLibraries;
 
-function editInnoTemplate(project_path, project_name, project_version, company_name, legacy) {
+function configureInnoTemplate(project_path, project_name, project_version, company_name, legacy) {
 	console.log("Setting up InnoSetup template");
   
 	return new Promise(function(resolve, reject) {    
@@ -648,5 +390,4 @@ exports.createPackagingDirectory = function(project_path) {
 const getPackagingDirectory = function(project_path) {
   return path.join(project_path, "Packaging", process.platform);
 };
-
 exports.getPackagingDirectory = getPackagingDirectory;
