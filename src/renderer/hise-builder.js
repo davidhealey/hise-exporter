@@ -1,21 +1,18 @@
 const utils = require('./utils.js');
+const log = require('electron-log');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra')
 const os = require('os')
 
-let buildProcess; //Holds child_process object when running build
+console.log = log.log;
+console.error = log.error;
 
-const assetPath = process.env.NODE_ENV === 'development'
-    ? path.join(__dirname, '../../assets')
-    : path.join(process.resourcesPath, 'assets');
+let child; //Holds child_process object when running build
 
-/*
-* Functions to run compilations/build process for each OS
-*/
-
-exports.cancelBuild = function() {
+exports.killChild = function() {
   try {
-    process.kill(-buildProcess.pid);
+		console.log("Killing child process.");
+    process.kill(-child.pid);
   }
   catch (err) {
     console.log("Process is not active: ", err);
@@ -23,246 +20,210 @@ exports.cancelBuild = function() {
 }
 
 exports.getChildProcess = function() {
-  return buildProcess;
+  return child;
 }
 
-exports.buildGNU = function(project_path, config) {
-
-  return new Promise(function(resolve, reject) {
-    
-    buildProcess = utils.spawnChild(
-      "make",
-      ["CONFIG=" + config, "AR=gcc-ar", "-j`nproc --ignore=2`"],
-      {shell: true, cwd: project_path + "/Binaries/Builds/LinuxMakefile"}
-    );
-    
-    buildProcess.on('close', code => {code == 0 ? resolve() : reject(code)});
-    
-  }).catch((err) => {console.log('Caught! ' + err)});
-}
-
-exports.buildInstallerGNU = function(project_path, project_name, project_version) {
-  
-  return new Promise(async function(resolve, reject) {
-    
-    try {
-      const escape = require('escape-path-with-spaces');
-      
-      let makeself = '"' + assetPath + "/makeself/makeself.sh" + '"';
-      let license = '"' + project_path + "/License.txt" + '"';
-      let archive_dir = project_path + "/Packaging/" + process.platform;
-      let file_name = archive_dir + "/" + project_name + "-" + project_version + ".run";
-          
-      //Copy license to packaging folder
-      fs.copyFileSync(path.join(project_path, "License.txt"), path.join(archive_dir, "License.txt"));
-
-      //Copy startup script to packaging folder
-      fs.copyFileSync(path.join(assetPath, "gnu-setup-script.sh"), path.join(archive_dir, "gnu-setup-script.sh"));
-      
-      //Run makeself
-      await utils.asyncExecFile(makeself, ["--license", license, '"' + archive_dir + '"', '"' + file_name + '"', '"' + project_name + '"', "./gnu-setup-script.sh"], {shell:true});
-      
-      resolve();
-    }
-    catch (err) {
-      reject(err);
-    }  
-  }).catch((err) => {console.log('Caught! ' + err)});
-}
-
-exports.buildOSX = function(project_path, config) {
+exports.build = function(project_path, arch) {
   
   return new Promise(function(resolve, reject) {
-    
-    let cwd = path.join(project_path, "Binaries", "Builds", "MacOSX");
-    let threads = os.cpus().length * 2 - 2;
+    let cmd = "";
+    let args = [];
+    let cwd = path.join(project_path, "Binaries", "Builds");
+		let config = "Release";
+    let threads = os.cpus().length * 2 - 1;
 
-    buildProcess = utils.spawnChild(
-      "xcodebuild",
-      ["-project", "*.xcodeproj", "-configuration", config, "-jobs", threads],
-      {shell: true, "cwd": cwd}
-    );
-
-    buildProcess.on('close', code => {code == 0 ? resolve() : reject(code)});
-    
-  }).catch((err) => {console.log('Caught! ' + err)});  
-}
-
-
-exports.buildInstallerOSX = function() {
-
-   /*return new Promise(async function(resolve, reject) {
-    
-    try {      
+    switch (process.platform) {
+      case "linux":
+        cmd = "make";
+        args = ["CONFIG=" + config, "AR=gcc-ar", "-j", threads];
+        cwd = path.join(cwd, "LinuxMakefile");
+      break;
+        
+      case "darwin":
+        cmd = "xcodebuild";
+        args = ["-project", "*.xcodeproj", "-configuration", config, "-jobs", threads];
+        cwd = path.join(cwd, "MacOSX");
+      break;
       
-      let packages = "/usr/local/bin/packagesbuild";
-    
-      let license = path.join(project_path, "License.txt");
-      let archive_dir = project_path + "/Packaging/" + process.platform;
-      let file_name = archive_dir + "/" + project_name + "-" + project_version + ".run";
-          
-      //Copy license to packaging folder
-      fs.copyFileSync(path.join(project_path, "License.txt"), path.join(archive_dir, "License.txt"));
-
-      //Copy startup script to packaging folder
-      fs.copyFileSync(path.join(assetPath, "gnu-setup-script.sh"), path.join(archive_dir, "gnu-setup-script.sh"));
-      
-      //Run makeself
-      await utils.asyncExecFile(makeself, ["--license", license, '"' + archive_dir + '"', '"' + file_name + '"', '"' + project_name + '"', "./gnu-setup-script.sh"], {shell:true});
-      
-      resolve();
-    }
-    catch (err) {
-      reject(err);
-    }  
-  }).catch((err) => {console.log('Caught! ' + err)});*/
-}
-
-exports.buildWindows = function(type, format, arch) {
-  /*
-  @echo off
-set project=Santur
-set build_path=Y:\Strings\nuno_silva\santur\HISE\Binaries
-set msbuild="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\MsBuild.exe"
-set vs_args=/p:Configuration="Release" /verbosity:minimal
-set PreferredToolArchitecture=x64
-set VisualStudioVersion=15.0
-
-"Z:\tools\Projucer\Projucer.exe" --resave "%build_path%\AutogeneratedProject.jucer"
-
-echo Compiling 64bit Standalone application %project% ...
-set Platform=X64
-%msbuild% "%build_path%\Builds\VisualStudio2017\%project%.sln" %vs_args%*/
+      case "win32":
+				if (arch == "x86") arch = "Win32";
+				cmd = '"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/MSBuild/15.0/Bin/MsBuild.exe"';
+				args = ["-ignore:.vcxproj", "-nr:false", "/p:Configuration=" + config, "/p:Platform=" + arch, "-maxcpucount:" + threads, "-fl", "-flp:logfile=BuildOutput.log;verbosity=minimal"];
+				cwd = path.join(cwd, "VisualStudio2017");
+      break;
+    }    
   
+    child = utils.spawnChild(cmd, args, {shell: true, "cwd": cwd});
+    child.on('close', code => {code == 0 ? resolve() : reject(code)});
+    child.stdout.on('data', (data) => {console.log(`stdout: ${data}`);});
+    child.stderr.on('data', data => {console.log(`stderr: ${data}`);});
+  }).catch((err) => {throw new Error(err);});
 }
 
 //Assembles a new filename for the binary - without extension
-exports.getNewFilename = function(project_path, project_name, build_args, config) {
-  
-  //Turn arguments into string to append to file name
-  if (build_args.indexOf("-l") != -1) build_args[build_args.indexOf("-l")] = "-legacy"; //Expand -l to -legacy
-  
-  build_args.splice(0, 1) //Remove plugin type
-  build_args.splice(-1, 1) //Remove project type
-
-  //Remove unneeded chars
-  build_args = build_args.map((x) => x.indexOf(":") != -1 ? "-" + x.substring(x.indexOf(":")+1) : x)
-
-  if (config == "Release")
-    return project_name + build_args.join("");
-  else
-    return project_name + build_args.join("") + "-Debug";
+exports.getNewFilename = function(current_filename, ipp, legacy) {
+	let extra = "";
+	if (ipp != undefined && process.platform == "Linux") extra += " (IPP)";
+  if (legacy != undefined) extra += " (L)";	
+	
+	return current_filename + extra;
 }
 
-//Determines the extension of the binary file based on the build arguments
-exports.getBinaryExtension = function(build_args) {
+//Determines the extension of the binary file
+exports.getBinaryExtension = function(project_type, plugin_format) {
   
   let ext = "";
-  if (build_args.includes("-p:VST3")) ext = ".vst3";
-  if (build_args.includes("-p:AU")) ext = ".component";
-  if (build_args.includes("-p:AAX")) ext = ".aaxplugin";
+  if (plugin_format == "VST3") ext = ".vst3";
+  if (plugin_format == "AU") ext = ".component";
+  if (plugin_format == "AAX") ext = ".aaxplugin";
   
-  switch (process.platform) {
-    case "linux":
-      if (build_args.includes("-p:VST")) ext = ".so";
-    break;
-    
-    case "darwin":
-      if (build_args.includes("-p:VST")) ext = ".vst";
-      if (build_args.includes("-t:standalone")) ext = ".app";
-    break;
-    
-    case "win32":
-      if (build_args.includes("-p:VST")) ext = ".dll";
-      if (build_args.includes("-t:standalone")) ext = ".exe";
-    break;
-  }
-  
+  if (ext == "") {
+    switch (process.platform) {
+      case "linux":
+        if (project_type.toLowerCase() == "standalone") ext = ".run";
+        if (plugin_format == "VST2") ext = ".so";
+      break;
+      
+      case "darwin":
+        if (project_type.toLowerCase() == "standalone") ext = ".app";
+        if (plugin_format == "VST2") ext = ".vst";
+      break;
+      
+      case "win32":
+        if (project_type.toLowerCase() == "standalone") ext = ".exe";
+        if (plugin_format == "VST2") ext = ".dll";
+      break;
+    }
+  }  
   return ext;
 }
 
-//Get location of binary file
-exports.getOutputDirectory = function(config) {
+//Get location of binary file output by build process
+exports.getOutputDirectory = function(project_path, project_type, plugin_format) {
 
-  let result = path.join("Binaries", "Builds")
-
+  let dir = path.join(project_path, "Binaries");
+  
   switch (process.platform) {
-    case "linux":
-      return path.join(result, "LinuxMakefile", "build");
-    break;
+    case "linux": return path.join(dir, "Builds", "LinuxMakefile", "build"); break;
     
-    case "darwin":
-      return path.join(result, "MacOSX", "build", config);
+		case "darwin":
+      if (project_type == "standalone")
+        return path.join(dir, "Compiled");
+      else
+        return path.join(dir, "Builds", "MacOSX", "build", "Release");
     break;
-    
+		
     case "win32":
-      return path.join(result, "VisualStudio2017");
-    break;
+			if (project_type == "standalone")
+				return path.join(dir, "Compiled", "App");
+			else if (plugin_format == "VST2")
+				return path.join(dir, "Compiled", "VST");
+			else
+				return path.join(dir, "Compiled", plugin_format);
+		break;			
   }
 }
 
 //Get name of generated binary file - without extension
-exports.getOutputName = function(project_name, config) {
+exports.getOutputName = function(project_name, arch) {
   
-  switch (process.platform) {    
-    case "darwin":
-      return project_name + " " + config;
-    break;
-    
-    case "win32":
-      return project_name + "_" + config;
-    break;
-  }
+	if (process.platform == "win32")
+		return project_name + " " + arch;
+	else
+		return project_name;
 }
 
 /*
 * Wrappers for HISE CLI commands
 */
 exports.setHISEFolder = function(hise, hise_source) {
-  return utils.asyncExec('"' + hise + '"', ["set_hise_folder", "-p:" + '"' + hise_source + '"']);
+	console.log("Setting HISE source folder.");
+	if (process.platform != "win32") hise_source = '"' + hise_source + '"';
+  return utils.asyncExec('"' + hise + '"', ["set_hise_folder", "-p:" + hise_source]);
 }
 
 exports.setProjectFolder = function(hise, project_path) {
-  return utils.asyncExec('"' + hise + '"', ["set_project_folder", "-p:" + '"' + project_path + '"']);
+	console.log("Setting Project folder.");
+	if (process.platform != "win32") project_path = '"' + project_path + '"';
+  return utils.asyncExec('"' + hise + '"', ["set_project_folder", "-p:" + project_path]);
 }
 
 exports.setProjectVersion = function(hise, project_version) {
+	console.log("Setting Project version.");
   return utils.asyncExec('"' + hise + '"', ["set_version", "-v:" + project_version]);
 }
 
 exports.cleanBuildDirectory = function(hise, project_path) {
+	console.log("Cleaning build directory.");
   return utils.asyncExec('"' + hise + '"', ["clean", "-p:" + project_path, "--all"]);
 }
 
-exports.runHISEExport = function(hise, project_path, project_file, extraArgs) {
-  //let path = '"' + project_path + "/XmlPresetBackups/" + project_file + '"'; --Works on GNU
-  let project = path.join(project_path, "XmlPresetBackups", project_file);
-  extraArgs = extraArgs.join(" ");
-  return utils.asyncExec('"' + hise + '"', ["export_ci", project, extraArgs]);
+exports.runHISEExport = function(hise, project_path, project_file, build_data) {
+  return new Promise(function(resolve, reject) {
+		console.log("Running HISE Export.");
+		let project;
+
+		if (path.extname(project_file) == ".xml")
+			project = path.join(project_path, "XmlPresetBackups", project_file);
+		else
+			project = path.join(project_path, "Presets", project_file);
+
+		args = getBuildArguments(build_data);
+		child = utils.spawnChild('"' + hise + '"', ["export_ci", '"' + project + '"', args], {shell: true});
+		child.on('close', code => {code == 0 ? resolve() : reject(code)});
+    child.stdout.on('data', (data) => {console.log(`stdout: ${data}`);});
+    child.stderr.on('data', (data) => {console.error(`stderr: ${data}`);});
+	}).catch((err) => {reject(new Error(err));});
+}
+
+//Assemble args into string for HISE export via CLI
+function getBuildArguments(data) {
+
+	let result = "";
+	
+	if (data["project-type"]) result += "-t:" + data["project-type"] + " ";
+	
+	if (data["plugin-format"]) {
+		if (data["plugin-format"].includes("VST"))
+			result += "-p:VST ";
+		else
+			result += "-p:" + data["plugin-format"] + " ";
+	}
+	
+	if (data["arch"])
+		result += "-a:" + data["arch"] + " ";
+	
+	if (data["ipp"])
+		result += "ipp ";
+		
+	if (data["legacy-cpu"])
+		result += "-l "
+
+	console.log(result);
+	
+	return result.trim();
 }
 
 //Resaves the AutogeneratedProject.jucer file
 exports.resaveJucerFile = function(hise_source, project_path) {
-  //let projucer = '"' + hise_source + "/tools/projucer/Projucer" + '"';// --Works on GNU
-  let projucer = path.join(hise_source, "tools", "projucer", "Projucer"); 
-  let cwd = path.join(project_path, "Binaries");
   
-  //Append extension on Windows
-  if (process.platform == "win32")
-    projucer += ".exe";
-  
-  //Append additional file path on MacOS
-  if (process.platform == "darwin")
-    projucer = path.join(projucer + ".app", "Contents", "MacOS", "Projucer");
-    
-  //Add executable permissions to Projucer binary (might not work on Windows)
-  fs.chmodSync(projucer, 0o775);
-   
-  return utils.asyncExec(projucer, ["--resave AutogeneratedProject.jucer"], {"shell": true, "cwd": cwd});
-}
+	return new Promise(async function(resolve, reject) {
+		console.log("Resaving jucer file.");
+		let projucer = path.join(hise_source, "tools", "projucer", "Projucer"); 
+		let cwd = path.join(project_path, "Binaries");
+		
+		//Append extension on Windows
+		if (process.platform == "win32")
+			projucer += ".exe";
 
-//Creates directory to store compiled binaries
-exports.createPackagingDirectory = function(project_path) {
-  let packaging = '"' + project_path + "/Packaging/" + process.platform + '"';
-  return utils.asyncExec("mkdir", ["-p", packaging]);
+		//Append additional file path on MacOS
+		if (process.platform == "darwin")
+			projucer = path.join(projucer + ".app", "Contents", "MacOS", "Projucer");
+
+		//Add executable permissions to Projucer binary
+		fs.chmodSync(projucer, 0o775);
+				
+		child = utils.spawnChild('"' + projucer + '"', ["--resave AutogeneratedProject.jucer"], {shell: true, "cwd": cwd});
+		child.on('close', code => {code == 0 ? resolve() : reject(code)});
+	}).catch((err) => {console.log(err)});
 }

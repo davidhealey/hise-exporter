@@ -1,70 +1,66 @@
 const { ipcRenderer } = require('electron');
+const log = require('electron-log');
 const UIkit = require('uikit');
 const path = require('path');
-const xml2js = require('xml2js');
-const fs = require('fs');
+const xmlHandler = require("xml-js");
+const fs = require('fs-extra');
+const os = require('os');
+
+console.log = log.log;
 
 exports.readXml = function(xml_path) {
-  
-  return new Promise(function(resolve, reject) {
-      
-    try {
-      let file = fs.readFile(xml_path, (err, data) => {
-        if (err) throw(err);
-        let parser = new xml2js.Parser();
-        parser.parseStringPromise(data).then(result => resolve(result));
-      });
-    } catch (e) {
-      reject(e);
-    }
-  });
+	console.log("Read XML: ", xml_path);
+	let xml = fs.readFileSync(xml_path, "utf8");
+	return xmlHandler.xml2js(xml);
 }
 
-exports.writeXml = function(path, data) {
+//Convert object back to xml and write
+exports.writeXml = function(xml_path, xml_obj) {
+	console.log("Write XML: ", xml_path);
+	let xml = xmlHandler.js2xml(xml_obj, {spaces:4});
 
-  return new Promise(function(resolve, reject) {
-    
-    try {
-      let xmlBuilder = new xml2js.Builder({xmldec: {'version': '1.0','encoding': 'UTF-8'}});
-      let xml = xmlBuilder.buildObject(data);
-
-      fs.writeFile(path + "/project_info.xml", xml, () => resolve());
-
-    } catch (e) {
-        reject(e);
-    }
-  });
+	if (xml != undefined && xml != "") {
+		fs.unlinkSync(xml_path); //Delete old file
+		fs.writeFileSync(xml_path, xml); //Write new file
+	}
 }
 
 exports.openDir = function(default_dir, callback) {
-  ipcRenderer.invoke('openDir', {
-    default: default_dir
-  }).then(response => {
+  ipcRenderer.invoke('openDir', {default: default_dir})
+  .then(response => {
     if (response.canceled) return false;
     callback(response);
   });
 }
 
+exports.openFile = function(default_dir, filters, callback) {
+  ipcRenderer.invoke('openFile', {default: default_dir, "filters": filters})
+  .then(response => {
+    if (response.canceled) return false;
+    callback(response);
+  });  
+}
+
 exports.moveFile = function(origin, destination) {
 
-  /*if (process.platform == "win32")
-    return asyncExec("move", ["-f", '"' + origin + '"', '"' + destination + '"']);
-  else
-    return asyncExec("mv", ["-f", '"' + origin + '"', '"' + destination + '"']);*/
   return new Promise(function(resolve, reject) {
     fs.rename(origin, destination, (err) => {
-      if (err) throw err;
+      if (err) throw err; reject();
       resolve();
     }); 
-  });    
+  }).catch(err => {throw(err)});
+}
+
+exports.copyFile = function(origin, destination) {
+  return fs.copyFile(origin, destination);
 }
 
 let spawnChild = function(cmd, args, opts) {
   const { spawn } = require('child_process');
   opts.detached = true;
-  opts.stdio = "inherit";
   return spawn(cmd, args, opts);
 }
+exports.spawnChild = spawnChild;
 
 const asyncExec = function(cmd, args, opts) {
   const ex = require('child_process').exec;
@@ -75,8 +71,9 @@ const asyncExec = function(cmd, args, opts) {
       if (error) reject(error);
       resolve(stdout ? stdout : stderr);
     });
-  }).catch((err) => {console.log('Caught! ' + err, cmd)});
+  }).catch((err) => {console.log(err, cmd)});
 }
+exports.asyncExec = asyncExec;
 
 const asyncExecFile = function(file, args, opts) {
   const ex = require('child_process').execFile;
@@ -86,8 +83,9 @@ const asyncExecFile = function(file, args, opts) {
       if (error) reject(error);
       resolve(stdout ? stdout : stderr);
     });
-  }).catch((err) => {console.log('Caught! ' + err, file)});
+  }).catch((err) => {console.log(err, file)});
 }
+exports.asyncExecFile = asyncExecFile;
 
 exports.notify = function(message) {
   UIkit.notification({
@@ -98,6 +96,80 @@ exports.notify = function(message) {
   });
 }
 
-exports.asyncExec = asyncExec;
-exports.asyncExecFile = asyncExecFile;
-exports.spawnChild = spawnChild;
+exports.validateEmail = function (email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+exports.setExportStatus = function(task, num1, num2, project_name, status) {
+	if (status != undefined && status != "") status = " | " + status;
+	message = task + ": " + num1 + "/" + num2 + " " + project_name + " " + status;
+	console.log(message);
+  document.getElementById("export-status-message").innerText = message;
+}
+
+exports.checkHISEPath = function() {
+	let dir = window.localStorage.getItem("hise-path");
+	return fs.existsSync(dir);
+}
+
+exports.checkHISEExec = function() {
+	let file = window.localStorage.getItem("hise-exec");
+	return fs.existsSync(file);
+}
+
+exports.checkVisualStudio = function() {
+	let dir = "C:/Program Files (x86)/Microsoft Visual Studio";
+	return fs.existsSync(dir);
+}
+
+exports.checkInnoSetup = function() {
+	let username = os.userInfo().username; //Windows username
+	let file = path.join("C:", "Users", username, "AppData", "Local", "Programs", "Inno Setup 6", "ISCC.exe");
+	return fs.existsSync(file);
+}
+
+exports.checkASIOSDK = function() {
+	let hise = window.localStorage.getItem("hise-path");
+	let dir = path.join(hise, "tools", "SDK", "ASIOSDK2.3", "common");
+	return fs.existsSync(dir);
+}
+
+exports.checkAAXSDK = function() {
+	let hise = window.localStorage.getItem("hise-path");
+	let dir = path.join(hise, "tools", "SDK", "AAX", "Libs");
+	return fs.existsSync(dir);
+}
+
+exports.checkWhiteboxPackages = function() {
+  let file = path.join("/usr", "local", "bin", "packagesbuild");
+	return fs.existsSync(file);
+}
+
+exports.checkVST2SDK = function() {
+	let hise = window.localStorage.getItem("hise-path");
+	let file = path.join(hise, "tools", "SDK", "VST3 SDK", "pluginterfaces", "vst2.x", "aeffect.h");
+	return fs.existsSync(file);
+}
+
+exports.checkVST3SDK = function() {
+	let hise = window.localStorage.getItem("hise-path");
+	let dir = path.join(hise, "JUCE", "modules", "juce_audio_processors", "format_types", "VST3_SDK");
+	return fs.existsSync(dir);
+}
+
+exports.checkCompanyName = function() {
+	let t = window.localStorage.getItem("company-name");
+	return t != "" && t != undefined;
+}
+
+exports.checkIpp = function() {
+
+  let paths = {
+    "linux":path.join("opt", "intel", "ipp"),
+    "darwin":path.join("opt", "intel", "ipp"),
+    "win32":false;
+  }
+  
+  if (paths[process.platform]) 
+    return fs.existsSync(paths.process.platform);
+}

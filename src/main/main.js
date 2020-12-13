@@ -1,6 +1,8 @@
 const {app, BrowserWindow, dialog, ipcMain, Menu, session}  = require('electron')
-
+const log = require('electron-log');
 const ses = session.defautSession;
+
+console.log = log.log;
 
 process.env.NODE_ENV = 'development';
 
@@ -33,6 +35,9 @@ function createWindow (width, height, title, html, devTools, parent, show) {
 
   return win;
 }
+
+//Fix sandboxing issue on gnux
+app.commandLine.appendSwitch('--no-sandbox');
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

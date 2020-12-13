@@ -28,7 +28,7 @@
               <label class="uk-form-label">Project</label>
               <div class="uk-form-controls">
                 <input class="uk-input uk-form-width-large" name="project-path" id="project-path" type="text" readonly="readonly" placeholder="Project Path">
-                <button class="uk-button uk-button-default" type="button" name="project-path-browse" id="project-path-browse">Browse</button>
+                <button class="uk-button uk-button-default open-dir" type="button" name="project-path-browse" id="project-path-browse">Browse</button>
               </div>
             </div>
 
@@ -46,12 +46,19 @@
               </div>
             </div>
 
+            <div class="uk-margin">
+              <label class="uk-form-label">Plugin Code</label>
+              <div class="uk-form-controls">
+                <input class="uk-input uk-width-1-3" name="plugin-code" id="plugin-code" type="text" placeholder="Abcd">
+              </div>
+            </div>
+
             <span id="hidden-until-project" style="visibility: hidden;">
               <div class="uk-margin" id="project-file-field">
-                <label class="uk-form-label">XML File</label>
+                <label class="uk-form-label">Project File</label>
                 <div class="uk-form-controls">
                   <select id="project-file" class="uk-select uk-width-1-3">
-                    <option value="">Select XML</option>
+                    <option value="">Select File</option>
                   </select>
                 </div>
               </div>
@@ -86,25 +93,69 @@
                   <label class="uk-padding" id="aax-label"><input class="uk-radio" type="radio" name="plugin-format" id="aax" value="AAX"> AAX</label>
                 </div>
               </div>
+							
+							<div class="uk-margin" id="plugin-categories-field" style="display: none;">
+                <label class="uk-form-label" for="form-stacked-select">Plugin Categories</label>
+									<ul class="uk-list uk-form-controls uk-width-1-3" id="plugin-categories" style="height:100px; overflow:hidden; overflow-y:scroll;"></ul>
+              </div>
 
               <div class="uk-margin" id="architecture-field" style="display: none;">
                 <div class="uk-form-label">Architecture</div>
                 <div class="uk-form-controls">
-                  <label><input class="uk-checkbox" type="checkbox" name="arch" id="x86" value="x86"> 32Bit</label>
-                  <label class="uk-padding"><input class="uk-checkbox" type="checkbox" name="arch" id="x64" value="x64"> 64Bit</label>
+                  <label><input class="uk-radio" type="radio" name="arch" id="x86" value="x86"> 32Bit</label>
+                  <label class="uk-padding"><input class="uk-radio" type="radio" name="arch" id="x64" value="x64"> 64Bit</label>
                 </div>
               </div>
 
               <div class="uk-margin" id="features-field" style="display: none;">
                 <div class="uk-form-label">Features</div>
                 <div class="uk-form-controls">
-                  <label><input class="uk-checkbox" type="checkbox" name="legacy-cpu" id="legacy-cpu" value="legacy-cpu"> Legacy CPU Support</label>
-                  <label class="uk-padding"><input class="uk-checkbox" type="checkbox" name="ipp" id="ipp" value="ipp"> IPP</label>
-                  <label class="uk-padding" id="rlottie-label"><input class="uk-checkbox" type="checkbox" name="rlottie" id="rlottie" value="rlottie"> rlottie</label>
-                  <label class="uk-padding"><input class="uk-checkbox" type="checkbox" name="debug" id="debug" value="debug"> Debug Build</label>
+                  <label><input class="uk-checkbox" type="checkbox" name="features" id="ipp" value="ipp"> IPP</label>
+									<label class="uk-padding" id="legacy-label"><input class="uk-checkbox" type="checkbox" name="features" id="legacy-cpu" value="legacy-cpu"> Legacy CPU Support</label>
+                  <label class="uk-padding" id="rlottie-label"><input class="uk-checkbox" type="checkbox" name="features" id="rlottie" value="rlottie"> rlottie</label>
                 </div>
               </div>
 
+              <div class="uk-margin" id="osx-features-field" style="display: none;">
+                <div class="uk-form-label">Post Process</div>
+                <div class="uk-form-controls">
+                  <label id="codesign-label"><input class="uk-checkbox" type="checkbox" name="codesign" id="codesign" value="codesign"> Codesign</label>
+                  <label class="uk-padding" id="notarize-label"><input class="uk-checkbox" type="checkbox" name="notarize" id="notarize" value="notarize"> Notarize</label>
+                </div>
+              </div>
+                            
+              <div class="uk-margin" id="license-field">
+                <label class="uk-form-label">License*</label>
+                <div class="uk-form-controls">
+                  <input class="uk-input uk-form-width-large" name="license-path" id="license-path" type="text" readonly="readonly" placeholder="License.txt">
+                  <button class="uk-button uk-button-default open-file" filters="[{name:'Plain Text',extensions:['txt']}]" type="button" name="license-path-browse" id="license-path-browse">Browse</button>
+                </div>
+              </div>
+
+              <div class="uk-margin" id="readme-field">
+                <label class="uk-form-label">Read Me</label>
+                <div class="uk-form-controls">
+                  <input class="uk-input uk-form-width-large" name="readme-path" id="readme-path" type="text" readonly="readonly" placeholder="ReadMe.txt">
+                  <button class="uk-button uk-button-default open-file" filters="[{name:'Plain Text',extensions:['txt']}]" type="button" name="readme-path-browse" id="readme-path-browse">Browse</button>
+                </div>
+              </div>
+							
+              <div class="uk-margin" id="manual-field">
+                <label class="uk-form-label">User Manual</label>
+                <div class="uk-form-controls">
+                  <input class="uk-input uk-form-width-large" name="manual-path" id="manual-path" type="text" readonly="readonly" placeholder="User Manual.pdf">
+                  <button class="uk-button uk-button-default open-file" filters="[{name:'PDF',extensions:['pdf']}]" type="button" name="manual-path-browse" id="manual-path-browse">Browse</button>
+                </div>
+              </div>
+
+              <div class="uk-margin" id="post-install-script-field">
+                <label class="uk-form-label">Post Install Script</label>
+                <div class="uk-form-controls">
+                  <input class="uk-input uk-form-width-large" name="post-install-script-path" id="post-install-script-path" type="text" readonly="readonly" placeholder="MyScript.sh">
+                  <button class="uk-button uk-button-default open-file" filters="[{name:'Scripts',extensions:['sh', 'run']}]" type="button" name="post-install-script-path-browse" id="post-install-script-path-browse">Browse</button>
+                </div>
+              </div>
+              
               <div class="uk-margin" id="add-job-field" style="display:none;">
                 <div class="uk-form-controls">
                   <button class="uk-button uk-button-default" id="add-to-queue" type="button">Add to Queue</button>
@@ -124,7 +175,6 @@
                 <th>Legacy CPU</th>
                 <th>IPP</th>
                 <th>rlottie</th>
-                <th>Debug</th>
               </tr>
             </thead>
             <tbody uk-sortable="handle: .uk-sortable-handle" id="queue">
@@ -139,41 +189,66 @@
           <form id="settings-form">
 
             <div class="uk-margin">
-              <label class="uk-form-label">HISE Standalone Executable</label>
+              <label class="uk-form-label">HISE Standalone Executable*</label>
               <div class="uk-form-controls">
-                <input class="uk-input uk-form-width-large" name="hise-exec" id="hise-exec" type="text" placeholder="HISE Standalone">
+                <input class="uk-input uk-form-width-large" name="hise-exec" id="hise-exec" type="text" readonly="readonly" placeholder="HISE Standalone">
                 <button class="uk-button uk-button-default" type="button" name="hise-exec-browse" id="hise-exec-browse">Browse</button>
               </div>
             </div>
 
             <div class="uk-margin">
-              <label class="uk-form-label">HISE Source Code</label>
+              <label class="uk-form-label">HISE Source Code*</label>
               <div class="uk-form-controls">
                 <input class="uk-input uk-form-width-large" name="hise-path" id="hise-path" type="text" placeholder="HISE Source Code">
                 <button class="uk-button uk-button-default" type="button" name="hise-path-browse" id="hise-path-browse">Browse</button>
               </div>
             </div>
 
+            <div class="uk-margin">
+              <label class="uk-form-label">Company Name*</label>
+              <div class="uk-form-controls">
+                <input class="uk-input uk-form-width-large" name="company-name" id="company-name" type="text" placeholder="My Company">
+              </div>
+            </div>
+
+						<div class="uk-margin">
+              <label class="uk-form-label">Company Email</label>
+              <div class="uk-form-controls">
+                <input class="uk-input uk-form-width-large" name="company-email" id="company-email" type="email" placeholder="info@my_company.com">
+              </div>
+            </div>
+						
             <span id="apple-settings-field">
               <div class="uk-margin">
                 <label class="uk-form-label">Apple Developer ID</label>
                 <div class="uk-form-controls">
                   <div class="uk-inline">
                     <span class="uk-form-icon" uk-icon="icon: user"></span>
-                    <input class="uk-input uk-form-width-large" name="apple-id" id="apple-id" type="text" placeholder="Apple Developer ID">
+                    <input class="uk-input uk-form-width-large" name="apple-id" id="apple-id" type="email" placeholder="email@email.com">
                   </div>
                 </div>
               </div>
 
               <div class="uk-margin">
-                <label class="uk-form-label">Apple Developer Password</label>
+                <label class="uk-form-label">Apple App Specific Password</label>
                 <div class="uk-form-controls">
                   <div class="uk-inline">
                     <span class="uk-form-icon uk-form-icon" uk-icon="icon: lock"></span>
-                    <input class="uk-input uk-form-width-large" name="apple-password" id="apple-password" type="password" placeholder="Apple Developer Password">
+                    <input class="uk-input uk-form-width-large" name="app-specific-password" id="app-specific-password" type="password" placeholder="abcd-efgh-ijkl-mnop">
                   </div>
                 </div>
               </div>
+              
+              <div class="uk-margin">
+                <label class="uk-form-label">Apple Team ID</label>
+                <div class="uk-form-controls">
+                  <div class="uk-inline">
+                    <span class="uk-form-icon" uk-icon="icon: user"></span>
+                    <input class="uk-input uk-form-width-large" name="apple-team-id" id="apple-team-id" type="text" placeholder="TEAM ID (123456)">
+                  </div>
+                </div>
+              </div>
+              
             </span>
 
             <div class="uk-width-1-1">
@@ -181,7 +256,6 @@
                 <button class="uk-button uk-button-default" id="save-settings" type="button">Save</button>
               </div>
             </div>
-
           </form>
 
         </li>
@@ -202,6 +276,8 @@
   <script>
     require("./test.js"); //Unit tests
     require('./index.js');
+    require('./queue.js');
+    require('./job.js');
     require('./settings.js');
   </script>
 </body>
