@@ -99,6 +99,7 @@ async function processQueue() {
 
 			//Run job
 	    if (job["project-type"] == "installer") { //Installer job
+				utils.setExportStatus("Exporting", currentJob, totalJobs, job["project-name"], "Building Installer.");
 	      switch (process.platform) {
 	        case "linux":
 	          outputFile = await packager.packageLinux(job["project-path"], job["project-name"], job["project-version"], companyName, job["license-path"], job["manual-path"], job["post-install-script-path"]);
@@ -168,6 +169,7 @@ async function processQueue() {
 	      if (!cancel) {
 					utils.setExportStatus("Exporting", currentJob, totalJobs, job["project-name"], "Copying binary to packaging folder");
 	        let dirs = getBinaryOriginAndDestination(job);
+					console.log(dirs.origin, dirs.destination);
 	        await fs.copy(dirs.origin, dirs.destination);
 	        outputFile = dirs.destination; //Return path to copied binary
 	      }
