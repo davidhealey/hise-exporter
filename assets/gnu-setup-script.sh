@@ -31,7 +31,7 @@ if [[ "$legacy" == 1 ]]; then
 fi
 
 for file in *; do 
-  if [[ -f "$file" ]] && [[ "$file" != *".sh" ]]; then
+  if [[ -f "$file" ]] && [[ "$file" != *".sh" ]] && [[ "$file" != *".txt" ]]; then
     if [[ "$file" != *".so" && ( "$file" != *".vst3" && "$file" != "$standalone_name" ) || ( $install_type = 1 && "$file" != *"(L)"* ) || (( $install_type = 2 && "$file" == *"(L)"* )) ]]; then
 
       file_type=""
