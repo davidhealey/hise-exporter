@@ -57,8 +57,10 @@ function copyResources(project_path, license, manual, readme, script) {
     console.log("Copying Script:", script);
     if (process.platform == "darwin")
       fs.copyFileSync(script, path.join(macScriptsDir, "postinstall"));
-    else if (process.platform == "linux")
+    else if (process.platform == "linux") {
       fs.copyFileSync(script, path.join(packagingDir, "gnu-setup-script.sh"));
+      fs.chmodSync(path.join(packagingDir, "gnu-setup-script.sh"), 0o777);
+    }
   }  
 }
  
@@ -72,11 +74,14 @@ exports.packageLinux = function(project_path, project_name, project_version, com
     let packagingDir = getPackagingDirectory(project_path);
     let fileName = project_name + " " + project_version + ".run";
 
+    //Remove old installers
+    await removeOldLinuxPackageFiles(project_path, project_name);
+
     //Copy resources to packaging folder
     copyResources(project_path, license_path, manual_path, "", script_path);
 
     //If no script provided then use default template
-    if (!script) await configureGnuInstallerScriptTemplate(project_path, project_name, company_name);
+    if (!script_path) await configureGnuInstallerScriptTemplate(project_path, project_name, company_name);
 
     //Run makeself
     console.log("Running makeself");
@@ -87,7 +92,7 @@ exports.packageLinux = function(project_path, project_name, project_version, com
         '"' + packagingDir + '"',
         '"' + fileName + '"',
         '"' + project_name + '"',
-        "./gnu-setup-script.sh"
+        './gnu-setup-script.sh'
       ],
       {shell:true, cwd:packagingDir}
     );
@@ -130,8 +135,32 @@ function configureGnuInstallerScriptTemplate(project_path, project_name, company
       template = template.replace("%LEGACY%", legacy);
       
       fs.writeFileSync(path.join(packagingDir, "gnu-setup-script.sh"), template);
-      resolve();
+      fs.chmodSync(path.join(packagingDir, "gnu-setup-script.sh"), 0o777);
+      resolve();      
+    });
+  }).catch((err) => {console.log(err);});
+}
+
+function removeOldLinuxPackageFiles(project_path, project_name) {
+
+  console.log("Removing old files.");
+  
+  return new Promise(function(resolve, reject) {
+    let packagingDir = getPackagingDirectory(project_path);  
+    //Go through all the files in the packaging directory and remove any .sh ones
+    fs.readdir(packagingDir, (err, files) => {
+      if (err) throw (err);
       
+      let extensions = [".run", ".sh", ".txt", ".pdf"];
+
+      files.every(file => {
+        if (extensions.includes(path.extname(file))) {
+          console.log(file);
+          fs.removeSync(path.join(packagingDir, file));
+        }
+        return true;
+      });
+      resolve();
     });
   }).catch((err) => {console.log(err);});
 }
@@ -262,6 +291,7 @@ function copyRlottieLibraries(project_path) {
 		let x32 = path.join(assetPath, "rlottie", "rlottie_x86.dll");
 		let x64 = path.join(assetPath, "rlottie", "rlottie_x64.dll");
 		let destination = getPackagingDirectory(project_path);
+
 		await fs.copy(x32, path.join(destination, "rlottie_x86.dll"));
 		await fs.copy(x64, path.join(destination, "rlottie_x64.dll"));
 		resolve();
