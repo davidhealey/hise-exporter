@@ -39,8 +39,8 @@ const data = {
 		"win32":"Z:/HISE"
   },
   "project_path":{
-    "linux":"/media/dave/Work 1/Projects/Strings/michaelas_harp/HISE",
-    //"darwin":"/Volumes/Projects/Strings/michaelas_harp/HISE",
+    //"linux":"/media/dave/Work 1/Projects/Strings/michaelas_harp/HISE",
+    "linux":"/home/dave/Downloads/sordina-1.0.0",
     "darwin":"/Users/laboratoryaudio/Desktop/harp",
 		"win32":"Y:/Strings/michaelas_harp/HISE"
   },
@@ -48,6 +48,7 @@ const data = {
     "darwin": "/Users/laboratoryaudio/Desktop/harp/Packaging/darwin/test.vst"
   },
 	"license": {
+    "linux":"/media/dave/Work 1/Projects/Strings/michaelas_harp/HISE/License.txt",
 		"win32":"Y:/Strings/michaelas_harp/HISE/License.txt",
     "darwin":"/Volumes/Projects/Strings/michaelas_harp/HISE/License.txt"
 	},
@@ -177,12 +178,14 @@ async function package() {
 	let outputFile;
 	
   switch (process.platform) {
-    case "linux": break;
+    case "linux":
+      outputFile = await packager.packageLinux(data.project_path.linux, data.project_name, data.project_version, data.company_name, data.license.linux);
+    break;
     case "darwin":
-      outputFile = await packager.packageDarwin(data.project_path.darwin, data.project_name, data.project_version, data.company_name, data.license[process.platform], data.user_manual[process.platform]);
+      outputFile = await packager.packageDarwin(data.project_path.darwin, data.project_name, data.project_version, data.company_name, data.license.darwin, data.user_manual.darwin);
     break;
     case "win32":
-			outputFile = await packager.packageWin32(data.project_path.win32, data.project_name, data.project_version, data.company_name, data.license[process.platform], data.user_manual[process.platform]);
+			outputFile = await packager.packageWin32(data.project_path.win32, data.project_name, data.project_version, data.company_name, data.license.win32, data.user_manual.win32);
 		break;
   }
   console.log("Packaging Test Complete: ", outputFile);
