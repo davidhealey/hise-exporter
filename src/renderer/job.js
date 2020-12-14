@@ -220,7 +220,7 @@ function verifyFormData(data) {
 			resolve("Company name has not been set.");
 				
 		if (data["project-type"] == "installer" && process.platform == "win32" && !utils.checkInnoSetup())
-			resolve("Inno Setup 6 installation not found.");
+			resolve("Inno Setup 6 (64bit) installation not found.");
 			
 		if (data["plugin-format"] == "VST2" && !utils.checkVST2SDK())
 			resolve("VST2 SDK not found.");
