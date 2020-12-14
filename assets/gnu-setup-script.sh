@@ -58,15 +58,10 @@ for file in *; do
           
         if [[ "$file" == *".so" ]]; then
           path="$so_path"
-          cp -i "$file" "$so_path"
-          chown "$SUDO_USER" "$so_path/$file"
-          echo "$file installed at $so_path"
         fi
             
         if [[ "$file" == *".vst3" ]]; then 
           path="$vst3_path"
-          cp -i "$file" "$vst3_path"
-          echo "$file installed at $vst3_path"
         fi
 
         if [[ "$file" == "$standalone_name" || ( "$file" == *".pdf" ) ]]; then
