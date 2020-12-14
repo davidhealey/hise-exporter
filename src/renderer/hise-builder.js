@@ -213,7 +213,7 @@ function getBuildArguments(data) {
 		result += "-a:" + data["arch"] + " ";
 	
 	if (data["ipp"])
-		result += "ipp ";
+		result += "-ipp ";
 		
 	if (data["legacy-cpu"])
 		result += "-l ";
