@@ -130,7 +130,6 @@ along with Waistline.  If not, see <http://www.gnu.org/licenses/>.
                 <div class="uk-form-controls">
                   <label><input class="uk-checkbox" type="checkbox" name="features" id="ipp" value="ipp"> IPP</label>
                   <label class="uk-padding" id="legacy-label"><input class="uk-checkbox" type="checkbox" name="features" id="legacy-cpu" value="legacy-cpu"> Legacy CPU Support</label>
-                  <label class="uk-padding" id="rlottie-label"><input class="uk-checkbox" type="checkbox" name="features" id="rlottie" value="rlottie"> rlottie</label>
                 </div>
               </div>
 
@@ -171,6 +170,13 @@ along with Waistline.  If not, see <http://www.gnu.org/licenses/>.
                 <div class="uk-form-controls">
                   <input class="uk-input uk-form-width-large" name="post-install-script-path" id="post-install-script-path" type="text" readonly="readonly" placeholder="MyScript.sh">
                   <button class="uk-button uk-button-default open-file" filters="[{name:'Scripts',extensions:['sh', 'run']}]" type="button" name="post-install-script-path-browse" id="post-install-script-path-browse">Browse</button>
+                </div>
+              </div>
+
+              <div class="uk-margin" id="libraries-field" style="display: none;">
+                <div class="uk-form-label">Additional Libraries</div>
+                <div class="uk-form-controls">
+                  <label><input class="uk-checkbox" type="checkbox" name="features" id="rlottie" value="rlottie"> rlottie</label>
                 </div>
               </div>
 

@@ -43,6 +43,7 @@ document.querySelector('select#project-type').addEventListener('change', async f
   document.getElementById("readme-field").style.display = "none";
   document.getElementById("manual-field").style.display = "none";
   document.getElementById("post-install-script-field").style.display = "none";
+  document.getElementById("libraries-field").style.display = "none";
   document.getElementById("add-job-field").style.display = "none";
 
   //Show elements for plugins
@@ -53,6 +54,7 @@ document.querySelector('select#project-type').addEventListener('change', async f
   if (value == "installer") {
     document.getElementById("license-field").style.display = "block";
     document.getElementById("manual-field").style.display = "block";
+    document.getElementById("libraries-field").style.display = "block";
 
     //Show installer script box on Linux (add Darwin support later)
     if (process.platform != "win32" && process.platform != "darwin")
