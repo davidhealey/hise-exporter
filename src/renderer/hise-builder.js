@@ -156,7 +156,7 @@ exports.getOutputDirectory = function(project_path, project_type, plugin_format)
 //Get name of generated binary file - without extension
 exports.getOutputName = function(project_name, arch) {
 
-  if (process.platform == "win32")
+  if (process.platform == "win32" && arch == "x86")
     return project_name + " " + arch;
   else
     return project_name;
