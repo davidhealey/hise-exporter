@@ -1,5 +1,5 @@
 /*  
-Copyright 2018 David Healey
+Copyright 2020, 2021 David Healey
 This file is part of Hise-Exporter.
   
 Hise-Exporter is free software: you can redistribute it and/or modify
@@ -165,10 +165,8 @@ function hideControlsOnPlatform() {
 
   switch (process.platform) {
     case "linux":
-      document.getElementById("vst3-label").style.display = "none";
       document.getElementById("au-label").style.display = "none";
       document.getElementById("aax-label").style.display = "none";
-      document.getElementById("rlottie-label").style.display = "none";
       document.getElementById("apple-settings-field").style.display = "none";
       break;
 
