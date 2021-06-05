@@ -3,3 +3,4 @@ dist
 notes
 *.DS_*
 ._*
+package-lock.json
