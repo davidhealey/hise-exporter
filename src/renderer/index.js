@@ -28,11 +28,11 @@ let project_info; //From project_info.xml
 hideControlsOnPlatform();
 
 const getProjectInfo = function(key) {
-		if (project_info == undefined) return false;
-	  for (let element of project_info.elements[0].elements) {
-	    if (element.name == key)
-	      return element.attributes.value;
-	  }
+  if (project_info == undefined) return false;
+  for (let element of project_info.elements[0].elements) {
+    if (element.name == key)
+      return element.attributes.value;
+  }
 };
 exports.getProjectInfo = getProjectInfo;
 
@@ -97,11 +97,11 @@ document.getElementById("project-path").addEventListener("change", e => {
     return false;
   }
 
-	project_info = utils.readXml(projectInfoPath);
-	
-	//Add project info to UI
-	document.querySelector("input#project-name").value = getProjectInfo("Name");
-	document.querySelector("input#project-version").value = getProjectInfo("Version");
+  project_info = utils.readXml(projectInfoPath);
+
+  //Add project info to UI
+  document.querySelector("input#project-name").value = getProjectInfo("Name");
+  document.querySelector("input#project-version").value = getProjectInfo("Version");
   document.querySelector("input#plugin-code").value = getProjectInfo("PluginCode");
 
   //Reset project export settings form
@@ -130,22 +130,22 @@ async function addProjectFilesToSelect(project_folder) {
   let xmlDir = path.join(project_folder, "XmlPresetBackups");
   if (fs.existsSync(xmlDir)) {
     let files = await fs.readdir(xmlDir);
-  
+
     for (let file of files) {
       if (path.extname(file) == ".xml")
         addOption(file);
-    }  
+    }
   }
 
   //.hip projects
   let presetsDir = path.join(project_folder, "Presets");
   if (fs.existsSync(presetsDir)) {
     let files = await fs.readdir(presetsDir);
-  
+
     for (let file of files) {
       if (path.extname(file) == ".hip")
         addOption(file);
-    }  
+    }
   }
 
   if (!select.length)
@@ -170,15 +170,15 @@ function hideControlsOnPlatform() {
       document.getElementById("aax-label").style.display = "none";
       document.getElementById("rlottie-label").style.display = "none";
       document.getElementById("apple-settings-field").style.display = "none";
-		break;
+      break;
 
     case "darwin":
-			document.getElementById("legacy-label").style.display = "none";
-		break;
+      document.getElementById("legacy-label").style.display = "none";
+      break;
 
     case "win32":
-			document.getElementById("au-label").style.display = "none";
+      document.getElementById("au-label").style.display = "none";
       document.getElementById("apple-settings-field").style.display = "none";
-		break;
+      break;
   }
 }
