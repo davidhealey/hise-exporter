@@ -1,6 +1,6 @@
 {
   "name": "hise-exporter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A tool to aid building of HISE projects.",
   "main": "src/main/main.js",
   "author": {

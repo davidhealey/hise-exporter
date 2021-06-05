@@ -181,7 +181,7 @@ exports.packageDarwin = function(project_path, project_name, project_version, co
     await configurePackagesTemplate(project_path, project_name, project_version, company_name);
 
     console.log("Running Whitebox Packages.");
-    await utils.asyncExec('"' + whiteboxPackages + '"', [packagesProj], {"shell":true});
+    await utils.asyncExec('"' + whiteboxPackages + '"', ['"' + packagesProj + '"'], {"shell":true});
         
     //Cleanup
     fs.removeSync(packagesProj);

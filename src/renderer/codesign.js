@@ -1,5 +1,5 @@
 /*  
-Copyright 2018 David Healey
+Copyright 2020, 2021 David Healey
 This file is part of Hise-Exporter.
   
 Hise-Exporter is free software: you can redistribute it and/or modify
@@ -26,8 +26,7 @@ let child; //Holds child_process object
 exports.killChild = function() {
   try {
     process.kill(-child.pid);
-  }
-  catch (err) {
+  } catch (err) {
     console.log("Process is not active: ", err);
   }
 };
@@ -45,15 +44,23 @@ function asyncExec(cmd, args, opts) {
       if (error) reject(error);
       resolve(stdout ? stdout : stderr);
     });
-  }).catch((err) => {console.log('AsyncExec ' + err, cmd);});
+  }).catch((err) => {
+    console.log('AsyncExec ' + err, cmd);
+  });
 }
 
 function spawnChild(cmd, args, opts) {
-  const { spawn } = require('child_process');
+  const {
+    spawn
+  } = require('child_process');
   opts.detached = true;
   let c = spawn(cmd, args, opts);
-  c.stdout.on('data', (data) => {console.log(`stdout: ${data}`);});
-  c.stderr.on('data', data => {console.log(`stderr: ${data}`);});
+  c.stdout.on('data', (data) => {
+    console.log(`stdout: ${data}`);
+  });
+  c.stderr.on('data', data => {
+    console.log(`stderr: ${data}`);
+  });
   return c;
 }
 
@@ -63,16 +70,18 @@ exports.validateTeamId = function(team_id) {
     let cmd = "security";
     let args = ["find-certificate", "-a", "-c", '"' + team_id + '"'];
     let result = await asyncExec(cmd, args);
-    
+
     let app_id = result.includes("Developer ID Application");
     let installer_id = result.includes("Developer ID Installer");
     let format = team_id.includes("(") && team_id.includes(")");
-    
+
     if (!format) resolve("format");
     if (!app_id) resolve("app");
     if (!installer_id) resolve("installer");
     resolve(true);
-  }).catch((err) => {console.log(err);});
+  }).catch((err) => {
+    console.log(err);
+  });
 };
 
 exports.signBinary = function(team_id, file) {
@@ -92,39 +101,46 @@ exports.verifySignature = function(file) {
 exports.notarizeInstaller = function(pkg, bundle_id, apple_id, app_specific_password) {
 
   console.log("Notarizing Installer");
-  
+
   return new Promise(async function(resolve, reject) {
-    let result = await asyncExec("xcrun altool", ["--notarize-app", "-f", '"' + pkg + '"', "--primary-bundle-id", bundle_id, "-u", '"' + apple_id + '"', "-p", app_specific_password], {shell: true});
-    
+    let result = await asyncExec("xcrun altool", ["--notarize-app", "-f", '"' + pkg + '"', "--primary-bundle-id", bundle_id, "-u", '"' + apple_id + '"', "-p", app_specific_password], {
+      shell: true
+    });
+
     console.log(result);
-    
+
     if (result.includes("RequestUUID")) {
       let uuid = result.substring(result.indexOf("RequestUUID") + 14).trim();
       resolve(uuid);
     }
     let err = "Problem with notarization: " + result;
     reject(err);
-  }).catch((err) => {console.log(err);});
+  }).catch((err) => {
+    console.log(err);
+  });
 };
 
 function getNotarizationStatus(uuid, apple_id, app_specific_password) {
   return new Promise(async function(resolve, reject) {
-    let result = await asyncExec("xcrun altool", ["--notarization-info", uuid, "-u", '"' + apple_id + '"', "-p", app_specific_password], {shell:true});
+    let result = await asyncExec("xcrun altool", ["--notarization-info", uuid, "-u", '"' + apple_id + '"', "-p", app_specific_password], {
+      shell: true
+    });
     if (result != undefined) {
       let status = result.substring(result.indexOf("Status") + 8, result.indexOf("LogFileURL")).trim();
       console.log("Notarization Status: ", result);
       resolve(status);
-    }
-    else
+    } else
       resolve("No Result");
-  }).catch((err) => {console.log(err);});
+  }).catch((err) => {
+    console.log(err);
+  });
 }
 exports.getNotarizationStatus = getNotarizationStatus; //Export for testing
 
 exports.stapleInstaller = function(pkg, uuid, apple_id, app_specific_password) {
-  
+
   console.log("Stapling Installer");
-  
+
   return new Promise(function(resolve, reject) {
 
     //Check notarization status every 30 seconds
@@ -132,17 +148,20 @@ exports.stapleInstaller = function(pkg, uuid, apple_id, app_specific_password) {
       let status = await getNotarizationStatus(uuid, apple_id, app_specific_password);
 
       if (status == "success") {
-        let result = asyncExec("xcrun stapler staple", ['"' + pkg + '"'], {shell: true});
+        let result = asyncExec("xcrun stapler staple", ['"' + pkg + '"'], {
+          shell: true
+        });
         resolve(result);
         clearInterval(timer);
-      }
-      else if (status == "invalid") {
+      } else if (status == "invalid") {
         reject(status);
         clearInterval(timer);
       }
     }, 30 * 1000);
 
-  }).catch((err) => {console.log(err);});
+  }).catch((err) => {
+    console.log(err);
+  });
 };
 
 exports.validateStaple = function(pkg) {
