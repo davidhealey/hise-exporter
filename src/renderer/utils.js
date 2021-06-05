@@ -1,5 +1,5 @@
 /*  
-Copyright 2020 David Healey
+Copyright 2020, 2021 David Healey
 This file is part of Hise-Exporter.
   
 Hise-Exporter is free software: you can redistribute it and/or modify
