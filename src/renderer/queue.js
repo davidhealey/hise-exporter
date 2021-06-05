@@ -359,12 +359,11 @@ function doNotarize(pkg, bundle_id) {
 
       if (uuid) {
         await codesign.stapleInstaller(pkg, uuid, apple_id, app_specific_password);
-        resolve();
+        return resolve();
       }
-      resolve();
     }
     utils.notify("Notarization Failed, check log file for details.");
-    reject("Notarization unsuccessful.");
+    return reject("Notarization unsuccessful.");
   });
 }
 
