@@ -53,9 +53,6 @@ Name: "{app}\"; Permissions: users-modify powerusers-modify admins-modify system
 ; USER MANUAL
 ;%USER_MANUAL%Name: "user_manual"; Description: "{#AppName} User Manual"; Types: full custom;
 
-; RLOTTIE
-;%RLOTTIE%Name: "libs"; Description: "{#AppName} Additional Libraries"; Types: full custom; Flags: fixed
-
 [Files]
 
 ; Standalone
@@ -78,10 +75,6 @@ Name: "{app}\"; Permissions: users-modify powerusers-modify admins-modify system
 ; AAX
 ;%AAX%Source: "{#AppName}.aaxplugin\*.*"; DestDir: "{cf}\Avid\Audio\Plug-Ins\{#AppName}.aaxplugin\"; Flags: ignoreversion recursesubdirs; Components: aax;
 ;%AAX_LEGACY%Source: "{#AppName}.aaxplugin\*.*"; DestDir: "{cf}\Avid\Audio\Plug-Ins\{#AppName}.aaxplugin\"; Flags: ignoreversion recursesubdirs; Components: aax;
-
-; RLOTTIE
-;%RLOTTIE%Source: "rlottie_x64.dll"; DestDir: "{win}\system32"; Flags: ignoreversion; Components: libs;
-;%RLOTTIE%Source: "rlottie_x86.dll"; DestDir: "{win}\system32"; Flags: ignoreversion; Components: libs;
 
 ; USER MANUAL
 ;%USER_MANUAL%Source: "{#AppName} User Manual.pdf"; DestDir: "{app}"; Flags: ignoreversion; Components: user_manual

@@ -292,8 +292,6 @@ exports.packageWin32 = function(project_path, project_name, project_version, com
 
     //Cleanup
     fs.removeSync(path.join(packagingDir, "License.txt"));
-    fs.removeSync(path.join(packagingDir, "rlottie_x86.dll"));
-    fs.removeSync(path.join(packagingDir, "rlottie_x64.dll"));
     if (manual_path) fs.removeSync(path.join(packagingDir, path.basename(manual_path)));
 
     resolve();
@@ -314,21 +312,6 @@ function copyInnoSetupTemplate(project_path) {
 }
 exports.copyInnoSetupTemplate = copyInnoSetupTemplate;
 
-function copyRlottieLibraries(project_path) {
-  return new Promise(async function(resolve, reject) {
-    let x32 = path.join(assetPath, "rlottie", "rlottie_x86.dll");
-    let x64 = path.join(assetPath, "rlottie", "rlottie_x64.dll");
-    let destination = getPackagingDirectory(project_path);
-
-    await fs.copy(x32, path.join(destination, "rlottie_x86.dll"));
-    await fs.copy(x64, path.join(destination, "rlottie_x64.dll"));
-    resolve();
-  }).catch((err) => {
-    console.log(err);
-  });
-}
-exports.copyRlottieLibraries = copyRlottieLibraries;
-
 function configureInnoTemplate(project_path, project_name, project_version, company_name, legacy) {
   console.log("Setting up InnoSetup template");
 
@@ -345,11 +328,7 @@ function configureInnoTemplate(project_path, project_name, project_version, comp
       if (err) throw (err);
       files.forEach(file => {
 
-        if (file.includes("rlottie")) {
-          lTemplate = lTemplate.replaceAll(";%RLOTTIE%", "");
-          template = template.replaceAll(";%RLOTTIE%", "");
-        } else if (file.includes(project_name)) {
-
+        if (file.includes(project_name)) {
           if (file.includes("User Manual")) {
             lTemplate = lTemplate.replaceAll(";%USER_MANUAL%", "");
             template = template.replaceAll(";%USER_MANUAL%", "");

@@ -191,10 +191,6 @@ async function processQueue() {
           await fs.copy(dirs.origin, dirs.destination);
           outputFile = dirs.destination; //Return path to copied binary
         }
-
-        //Copy rlottie libraries to packaging if required
-        if (job["rlottie"])
-          await packager.copyRlottieLibraries(job["project-path"]);
       }
 
       //Handle codesigning/notarization on MacOS
@@ -330,7 +326,6 @@ function formatTableEntry(data) {
 
   data["legacy-cpu"] ? result[3] = true : result[3] = false;
   data["ipp"] ? result[4] = true : result[4] = false;
-  data["rlottie"] ? result[5] = true : result[5] = false;
 
   return result;
 }

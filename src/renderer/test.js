@@ -236,10 +236,6 @@ function configureInnoTemplate() {
   packager.configureInnoTemplate(data.project_path[process.platform], data.project_name, data.project_version, data.company_name);
 }
 
-function copyRlottieLibraries() {
-  packager.copyRlottieLibraries(data.hise_source[process.platform], data.project_path[process.platform]);
-}
-
 function updateProjectInfoXml() {
 
   let xmlData = {};
@@ -275,7 +271,6 @@ function watchLogFile() {
 //timerTest();
 //build();
 //configureInnoTemplate();
-//copyRlottieLibraries();
 //createPackagingDirectory();
 //getOutputDirectory();
 //getOutputName();
