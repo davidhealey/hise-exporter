@@ -139,7 +139,7 @@ async function processQueue() {
         let xmlData = {};
         xmlData.Name = document.querySelector("input#project-name").value;
         xmlData.Version = document.querySelector("input#project-version").value;
-        xmlData.VST3Support = job["plugin-format"] == "VST3" && process.platform != "linux"; //Set VST3 flag (disable on linux)
+        xmlData.VST3Support = job["plugin-format"] == "VST3";
 
         updateProjectInfoXml(job["project-path"], xmlData);
 
