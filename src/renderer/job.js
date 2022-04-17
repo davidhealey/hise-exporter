@@ -59,7 +59,8 @@ document.querySelector('select#project-type').addEventListener('change', async f
       document.getElementById("post-install-script-field").style.display = "block";
   } else if (value != "") { //Standalone and plugins
 
-    document.getElementById("features-field").style.display = "block";
+    if (process.platform != "darwin")
+      document.getElementById("features-field").style.display = "block";
 
     //Linux and Darwin will always be 64bit
     if (process.platform != "win32") {

@@ -202,7 +202,6 @@ exports.checkIpp = function() {
 
   let paths = {
     "linux": path.join("opt", "intel", "ipp"),
-    "darwin": path.join("opt", "intel", "ipp"),
     "win32": false
   };
 
